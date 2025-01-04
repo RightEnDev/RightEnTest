@@ -219,7 +219,7 @@ const ImagePicker = ({ route, navigation }) => {
           // Navigate to 'Payment' screen after 1 second
           setTimeout(() => {
             setPhotoUris([]);
-            navigation.navigate('Paymennt', { "txn_id": txn_id ,"service_data":service_data});
+            navigation.navigate('Paymennt', { "txn_id": txn_id , "user_id":us_id, "service_data":service_data});
           }, 1000);
 
         } else {

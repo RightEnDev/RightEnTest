@@ -102,13 +102,13 @@ function TabNavigator() {
               label_text_value = "Profile";
               break;
             case 'Example1_2':
-              label_text_value = "price Chart";
+              label_text_value = "Price Chart";
               break;
             case 'Example2_1':
               label_text_value = "History";
               break;
             case 'Example2_2':
-              label_text_value = "settings";
+              label_text_value = "Settings";
               break;
             default:
               label_text_value = null;

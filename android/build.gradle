@@ -16,13 +16,18 @@ buildscript {
     }
     dependencies {
         classpath("com.android.tools.build:gradle")
+        //classpath("com.android.tools.build:gradle:7.0.4")
         classpath("com.facebook.react:react-native-gradle-plugin")
     }
 }
 allprojects {
-   repositories {
-       maven {
-            url  "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android"
-       }
-   }
+    repositories {
+        google()
+        mavenCentral()
+
+        maven {
+            // PhonePe SDK repository
+            url "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android"
+        }
+    }
 }

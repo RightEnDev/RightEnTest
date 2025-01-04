@@ -42,6 +42,7 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const user_id = 217;
         const response = await axios.get('https://righten.in/api/users/services');
         console.log(response.data.status);
         if (!response.data.status === "success") {
@@ -57,6 +58,31 @@ const HomeScreen = ({ navigation }) => {
 
     fetchData();
   }, []);
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const user_id = 217;
+  //       console.log('Sending user_id:', user_id);
+  //       const response = await axios.post(
+  //         'https://righten.in/api/users/services',
+  //         { user_id }, // Pass user_id in the POST body
+  //         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  //       );
+  //       console.log(response.data.status);
+  //       if (!response.data.status === "success") {
+  //         throw new Error('Network response was not ok');
+  //       }
+  //       setData(response.data.data);
+  //     } catch (error) {
+  //       setError(error.message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, []);
 
   if (loading) {
     return (

@@ -11,7 +11,7 @@ const ShowDetails = ({ route, navigation }) => {
   const { item } = route.params;
   const isFocused = useIsFocused();
   const [inprocess, setInprocess] = useState(false);
-  const [searchdata, setSearchData] = useState({});
+  const [searchdata, setSearchData] = useState([]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -21,10 +21,7 @@ const ShowDetails = ({ route, navigation }) => {
       };
 
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-        setSearchData({}); // Clear data on unmount
-      };
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation])
   );
 
@@ -33,9 +30,24 @@ const ShowDetails = ({ route, navigation }) => {
     const date = new Date();
     const extension = url.split('.').pop();
     const fileName = `file_${Math.floor(date.getTime() + date.getSeconds() / 2)}.${extension}`;
+
+    try {
+      const granted = Platform.OS === 'android' ? await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE) : true;
+      if (granted === PermissionsAndroid.RESULTS.GRANTED || Platform.OS === 'ios') {
+        actualDownload(fileName, url);
+      } else {
+        Alert.alert('Permission denied', 'Please grant storage permissions to download the file.');
+      }
+    } catch (err) {
+      console.log('Permission error:', err);
+      Alert.alert('Error', 'Could not request permissions');
+    }
+  };
+
+  const actualDownload = (fileName, pathJPG) => {
     const { dirs } = RNBlobUtil.fs;
     const dirToSave = Platform.OS === 'ios' ? dirs.DocumentDir : RNFS.DownloadDirectoryPath;
-
+    
     const configOptions = {
       fileCache: true,
       addAndroidDownloads: {
@@ -47,19 +59,22 @@ const ShowDetails = ({ route, navigation }) => {
       },
     };
 
-    try {
-      const res = await RNBlobUtil.config(configOptions).fetch('GET', url, {});
-      if (Platform.OS === 'ios') {
-        RNBlobUtil.fs.writeFile(res.path(), res.data, 'base64');
-        RNBlobUtil.ios.previewDocument(res.path());
-      }
-      Alert.alert('Download Successful', 'File has been downloaded successfully.', [{ text: 'OK' }]);
-    } catch (e) {
-      Alert.alert('Download Failure', 'Please try again', [{ text: 'OK' }]);
-      console.log('Download error:', e);
-    } finally {
-      setInprocess(false);
-    }
+    RNBlobUtil.config(configOptions)
+      .fetch('GET', pathJPG, {})
+      .then(res => {
+        setInprocess(false);
+        if (Platform.OS === 'ios') {
+          RNBlobUtil.fs.writeFile(res.path(), res.data, 'base64');
+          RNBlobUtil.ios.previewDocument(res.path());
+        } else {
+          console.log('File downloaded:', res.path());
+        }
+      })
+      .catch(e => {
+        setInprocess(false);
+        Alert.alert('Download Failure', 'Please try again', [{ text: 'OK' }]);
+        console.log('Download error:', e);
+      });
   };
 
   const getSearchData = async () => {
@@ -78,7 +93,7 @@ const ShowDetails = ({ route, navigation }) => {
     if (isFocused) {
       getSearchData();
     } else {
-      setSearchData({});
+      setSearchData([]);
     }
   }, [isFocused]);
 
@@ -107,7 +122,7 @@ const ShowDetails = ({ route, navigation }) => {
           }).map(([key, value]) => (
             <View style={styles.detailRow} key={key}>
               <Text style={styles.detailLabel}>{key}</Text>
-              <Text style={styles.detailValue}>{value ?? 'N/A'}</Text>
+              <Text style={styles.detailValue}>{value}</Text>
             </View>
           ))}
         </View>
@@ -123,73 +138,27 @@ const ShowDetails = ({ route, navigation }) => {
           }).map(([key, value]) => (
             <View style={styles.detailRow} key={key}>
               <Text style={styles.detailLabel}>{key}</Text>
-              <Text style={styles.detailValue}>{value ?? 'N/A'}</Text>
+              <Text style={styles.detailValue}>{value}</Text>
             </View>
           ))}
         </View>
-        <View style={styles.card}>
-          <View style={styles.headerContainer}>
-            <Text style={styles.documentHeader}>Documents</Text>
-            {searchdata?.retail_img && (
-              <View style={styles.imageContainer}>
-                {Object.values(searchdata.retail_img).map((item, index) => (
-                  <View key={index} style={styles.imageWrapper}>
-                    {item.file_path && (
-                      <TouchableOpacity onPress={() => downloadFile(searchdata.retail_img_path + item.file_path)}>
-                        <Text style={styles.downloadButton}>Download</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
+        <View style={styles.headerContainer}>
+          <Text style={styles.documentHeader}>Documents</Text>
         </View>
-      </View>
-
-
-
-
-      
-        {/* Admin Documents Card */}
-        <View style={styles.Admincard}>
-          <View style={styles.headerContainer}>
-            <Text style={styles.documentHeader}>Admin Documents</Text>
-            {searchdata?.admin_img ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-evenly' }}>
-              {Object.values(searchdata.admin_img).map((item, index) => (
-                <View
-                  key={index}
-                  style={{
-                    width: '30%', // Each item takes up 30% of the width
-                    marginBottom: 10, // Margin between rows
-                  }}
-                >
-                  {item.file_path ? (
-                    // {/* {searchdata.retail_img_path} */}
-                    //   {/* {item.file_path} */}
-                    <TouchableOpacity onPress={() => {
-                      console.log(searchdata.admin_img_path + item.file_path);
-                      downloadFile(searchdata.admin_img_path + item.file_path);
-
-                    }}>
-
-                      <Text style={{
-                        fontSize: 16, color: 'white', borderWidth: 1, borderColor: "#009743",
-                        borderRadius: 5, paddingHorizontal: 10, backgroundColor: "#009743", paddingVertical: 5,
-                        textAlign: 'center', marginTop: 15
-                      }}>Download</Text>
-                    </TouchableOpacity>
-
-                  ) : null}
-                </View>
+        <View>
+          {searchdata?.retail_img && (
+            <View style={styles.imagesContainer}>
+              {Object.values(searchdata.retail_img).map((imgItem, index) => (
+                <TouchableOpacity key={index} onPress={() => downloadFile(imgItem.file_path)}>
+                  <View style={styles.imageWrapper}>
+                    {/* Display image here */}
+                  </View>
+                </TouchableOpacity>
               ))}
             </View>
-          ) : (
-            null
           )}
-          </View>
         </View>
+      </View>
     </ScrollView>
   );
 };
@@ -203,14 +172,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    
   },
   loadingText: {
     color: 'white',
     fontSize: 24,
     textAlign: 'center',
+    
   },
   container: {
     padding: 10,
+    
   },
   card: {
     backgroundColor: '#fff',
@@ -218,77 +190,60 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
     elevation: 2,
-  },
-  Admincard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    width:"95%",
-    padding: 10,
-    alignItems:'center',
-    marginLeft:10,
-    marginBottom: 10,
-    elevation: 2,
+    
   },
   sectionHeader: {
     marginBottom: 10,
     borderBottomWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', // Align items in the center
+    justifyContent: 'center', // Center the content
+
+    
   },
   headerText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000000',
-    paddingVertical: 10,
+    paddingVertical: 10, // Add some vertical padding
+
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
     marginBottom: 5,
+    
   },
   detailLabel: {
     width: 210,
     fontSize: 16,
     color: '#000000',
+
   },
   detailValue: {
     fontSize: 16,
     color: '#000000',
+
   },
   headerContainer: {
     alignItems: 'center',
+    borderBottomWidth: 1,
     marginVertical: 10,
-    justifyContent: 'center',
+    
   },
   documentHeader: {
-    borderBottomWidth: 1,
-    width: 376,
     fontSize: 20,
     color: 'black',
     fontWeight: 'bold',
-    textAlign: 'center',
   },
-  imageContainer: {
+  imagesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center', // Center the documents
-    marginTop: 10,
-    paddingVertical: 10,
+    justifyContent: 'space-evenly',
   },
   imageWrapper: {
-    width: '30%',
-    margin: 5, // Add margin for spacing between buttons
-  },
-  downloadButton: {
-    fontSize: 16,
-    color: 'white',
-    borderWidth: 1,
-    borderColor: '#009743',
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    backgroundColor: '#009743',
-    paddingVertical: 5,
-    textAlign: 'center',
+    width: '30%', // Adjust as needed
+    marginBottom: 10,
+    // Add styles for the image
   },
 });
 
