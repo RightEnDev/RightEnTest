@@ -1,5 +1,5 @@
 import { Alert, Button, BackHandler, NativeEventEmitter, SafeAreaView, TouchableOpacity, Modal, Image, StyleSheet, Text, View } from 'react-native'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState,useCallback} from 'react'
 import axios from 'axios';
 import qs from 'qs';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,9 +11,6 @@ import { sha512 } from 'js-sha512';
 
 const PaymentPage = ({ route, navigation }) => {
   const { txn_id, user_id, service_data } = route.params;
-  console.log("from payment page");
-  console.log(service_data);
-  console.log(parseFloat(service_data.offer_price) * 100);
   const [userData, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,13 +18,6 @@ const PaymentPage = ({ route, navigation }) => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [merchantTransactionId, setMerchantTransactionId] = useState('');
-  //const TxnId = txn_id;
-
-  //console.log('Initial txn_id from route:', txn_id); // Verify txn_id from route
-
-//   useEffect(() => {
-//     console.log('New transaction started with txn_id:', txn_id);
-// }, [txn_id]);
 
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [failureModalVisible, setFailureModalVisible] = useState(false);
@@ -44,7 +34,7 @@ const PaymentPage = ({ route, navigation }) => {
 
   const [ios_surl, setIosSurl] = useState('https://success-nine.vercel.app');
   const [ios_furl, setIosFurl] = useState('https://failure-kohl.vercel.app');
-  const [android_surl, setAndroidSurl] = useState('https://righten.in/api/services/payU/success_url');
+  const [android_surl, setAndroidSurl] = useState('https://righten.in/api/services/check_status_payU');
   const [android_furl, setAndroidFurl] = useState('https://righten.in/api/services/payU/failed_url');
   const [environment, setEnvironment] = useState('0');
 
@@ -102,12 +92,13 @@ const PaymentPage = ({ route, navigation }) => {
     };
 
     fetchData();
-  }, [user_id]);
+  
+  }, []);
 
 
 
 
-  const createPaymentParams = () => {
+  const createPaymentParams=()=>{
 
     const payTime = paymentCount + 1;
     if (payTime > 3) {
@@ -119,14 +110,15 @@ const PaymentPage = ({ route, navigation }) => {
     setPaymentCount(payTime);
     const newTransactionId = `${txn_id}R${payTime}`;
     setMerchantTransactionId(newTransactionId);
-    console.log('Generated Transaction ID:', newTransactionId);
+
 
 
     var payUPaymentParams = {
       key: key,
+      //transactionId: newTransactionId,
       transactionId: txn_id,
       amount: amount,
-      productInfo: productInfo,
+      productInfo: "Service Payment",
       firstName: firstName,
       email: email,
       phone: phone,
@@ -152,7 +144,7 @@ const PaymentPage = ({ route, navigation }) => {
       primaryColor: '#4c31ae',
       secondaryColor: '#022daf',
       merchantName: 'RIGHTEN SUPERVISION PRIVATE LIMITED',
-      merchantLogo: "",
+      merchantLogo: "<Image source={logo} style={{ width: 300, height: undefined, aspectRatio: 5 }} />",
       showExitConfirmationOnCheckoutScreen: true,
       showExitConfirmationOnPaymentScreen: true,
       cartDetails: [{ Order: 'Food Order' }, { 'order Id': '123456' }, { 'Shop name': 'Food Shop' }],
@@ -169,14 +161,71 @@ const PaymentPage = ({ route, navigation }) => {
       payUPaymentParams: payUPaymentParams,
       payUCheckoutProConfig: payUCheckoutProConfig,
     };
-  };
+  }
 
 
-  const lunchPayUPayment=()=>{
-    console.log("Payment button clicked");
+const lunchPayUPayment=()=>{
     PayUBizSdk.openCheckoutScreen(createPaymentParams());
 
 }
+
+
+// **Lunch Payment for Generic Intent & UPI**
+// const lunchPayUPayment = async () => {
+//   try {
+//     const params = createPaymentParams();
+
+//     // Open PayU Checkout Screen
+//     PayUBizSdk.openCheckoutScreen(params);
+
+//     // Handle Callback (Success or Failure)
+//     PayUBizSdk.setCallbackHandler((response) => {
+//       console.log("Payment Response: ", response);
+
+//       // Check if the payment is from Generic Intent or UPI
+//       if (response && response.status === "SUCCESS") {
+//         if (response.paymentMode === "UPI") {
+//           console.log("UPI Payment Successful");
+//         } else {
+//           console.log("Generic Intent Payment Successful");
+//         }
+
+//         // Hit your success callback URL or validate payment manually
+//         validatePayment(response.transactionId);
+//       } else {
+//         console.error("Payment Failed: ", response);
+//         // Handle Failure
+//       }
+//     });
+//   } catch (error) {
+//     console.error("Payment Error: ", error);
+//   }
+// };
+
+
+// **Manual Payment Validation (Backend Call)**
+// const validatePayment = async (txnid) => {
+//   try {
+//     const formBody = `txnid=${encodeURIComponent(txnid)}`;
+
+//     const response = await fetch('https://righten.in/api/services/check_status_payU', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/x-www-form-urlencoded',
+//       },
+//       body: formBody,
+//     });
+
+//     const result = await response.json();
+//     if (result.status === 'success') {
+//       console.log('Payment validated successfully');
+//     } else {
+//       console.error('Payment validation failed:', result.message);
+//     }
+//   } catch (error) {
+//     console.error('Error validating payment:', error);
+//   }
+// };
 
 
 
@@ -184,44 +233,23 @@ const PaymentPage = ({ route, navigation }) => {
     Alert.alert(title, value);
   };
 
-  const onPaymentSuccess = async (e) => {
-    //const transactionId = merchantTransactionId;
-    console.log('check status txn_id in payment id: ', txn_id);
-    //console.log('check status txn_id in payment id: ', merchantTransactionId);
-    console.log('Payment Success Response:', e.payuResponse);
-    //console.log('PayU Response Txnid: ', payuResponse.txnid);
-    console.log('Check Status Txn Id: ', txn_id);
 
-    if (!txn_id) {
-      console.error('Transaction ID is missing');
-      setTimeout(() => navigation.navigate('main'), 1000);
-      return;
-    }
+  onPaymentSuccess = e => {
+     console.log(e.payuResponse);
+     //displayAlert('Success', 'Payment Success');
+     setSuccessModalVisible(true);
 
-    try {
-      const response = await axios.post(
-        'https://righten.in/api/services/check_status_payU',
-        qs.stringify({ transaction_id: txn_id }), // Pass correct transaction ID
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-      );
+     // Navigate to the main screen after 1 second
+     setTimeout(() => {
+       navigation.navigate('main');
+       setSuccessModalVisible(false); // Close the modal after navigation
+     }, 2000);
+   };
 
-      console.log('Payment Status Response:', response.data);
-
-      if (response.data.status === true) {
-        setTimeout(() => navigation.navigate('main'), 1000);
-      } else {
-        console.error('Payment verification failed:', response.data.message);
-        setTimeout(() => navigation.navigate('main'), 1000);
-      }
-    } catch (error) {
-      console.error('Error checking payment status:', error.message);
-      console.log(e);
-      setTimeout(() => navigation.navigate('main'), 1000);
-    }
-  };
   
   const onPaymentFailure = e => {
     console.error('Payment Failure Response:', e.payuResponse);
+    setTimeout(() => navigation.navigate('main'), 1000);
     setFailureModalVisible(true);
   };
 
@@ -274,7 +302,6 @@ const PaymentPage = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.username}>Pay To: RightEn.in</Text>
         <Image source={logo} style={{ width: 300, height: undefined, aspectRatio: 5 }} />
         <Text style={styles.amount}>Amount: ₹{amount}</Text>
         <TouchableOpacity style={styles.button} onPress={lunchPayUPayment}>
@@ -282,23 +309,25 @@ const PaymentPage = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* <Modal transparent visible={successModalVisible}>
+      {/* Modal for Payment Success */}
+      <Modal transparent visible={successModalVisible}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
+            {/* Lottie Animation (Success GIF) */}
+            <Image
+              source={require('../../assets/success.gif')} // Replace with your own JSON animation file
+              autoPlay
+              loop={false}
+              style={{ width: 150, height: 150 }}
+            />
             <Text style={styles.modalText}>Payment Successful!</Text>
-            <Button title="Go to Main Page" onPress={() => navigation.navigate('main')} />
+
+            {/* Go to Main Page button */}
+            <Button title="Ok" onPress={() => navigation.navigate('main')} />
           </View>
         </View>
       </Modal>
 
-      <Modal transparent visible={failureModalVisible}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalText}>Payment Failed!</Text>
-            <Button title="Retry Payment" onPress={() => setFailureModalVisible(false)} />
-          </View>
-        </View>
-      </Modal> */}
     </SafeAreaView>
   );
 };
@@ -308,38 +337,40 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    padding: 16,
+    backgroundColor: '#ffffff',
   },
   content: {
+    width: '90%',
+    padding: 20,
+    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 5,
     alignItems: 'center',
-    marginBottom: 20,
   },
   username: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
-    color: '#333',
   },
   amount: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginTop: 10,
+    fontSize: 20,
     marginBottom: 20,
-    color: '#555',
+    color: '#009743',
+    fontWeight: 'bold',
   },
   button: {
-    backgroundColor: '#4c31ae',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
+    backgroundColor: '#007bff',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 5,
   },
   buttonText: {
-    fontSize: 16,
-    color: '#fff',
+    color: '#ffffff',
+    fontSize: 18,
     fontWeight: 'bold',
   },
   modalContainer: {

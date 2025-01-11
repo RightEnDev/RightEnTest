@@ -74,12 +74,12 @@ const PriceChart = ({ navigation }) => {
             </View>
   
             <View style={styles.infoRow}>
-              <Text style={styles.serviceText}>Price: </Text>
+              <Text style={styles.serviceText}>Customer Price: </Text>
               <Text style={styles.pr1Text}>₹ {item.charges}</Text>
             </View>
   
             <View style={styles.infoRow}>
-              <Text style={styles.serviceText}>Discount: </Text>
+              <Text style={styles.serviceText}>Retail Price: </Text>
               <Text style={styles.pr2Text}>₹ {item.offer_price}</Text>
             </View>
   

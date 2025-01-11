@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useIsFocused } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import RNFS from 'react-native-fs';
 
 const ShowDetails = ({ route, navigation }) => {
   const { item } = route.params;
+  // console.log('Data',  item);
   const isFocused = useIsFocused();
   const [inprocess, setInprocess] = useState(false);
   const [searchdata, setSearchData] = useState({});
@@ -53,7 +54,7 @@ const ShowDetails = ({ route, navigation }) => {
         RNBlobUtil.fs.writeFile(res.path(), res.data, 'base64');
         RNBlobUtil.ios.previewDocument(res.path());
       }
-      Alert.alert('Download Successful', 'File has been downloaded successfully.', [{ text: 'OK' }]);
+      Alert.alert('Download Successful', 'Downloaded successfully.', [{ text: 'OK' }]);
     } catch (e) {
       Alert.alert('Download Failure', 'Please try again', [{ text: 'OK' }]);
       console.log('Download error:', e);
@@ -87,45 +88,59 @@ const ShowDetails = ({ route, navigation }) => {
       {inprocess && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#0000ff" />
-          <Text style={styles.loadingText}>File Downloading in progress...</Text>
+          <Text style={styles.loadingText}>Downloading in progress...</Text>
         </View>
       )}
       <View style={styles.container}>
+
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.headerText}>Retailer Details</Text>
+            <Text style={styles.headerText}>Service Details</Text>
           </View>
-          {Object.entries({
-            'Name': searchdata.user_name,
-            'UserId': searchdata.user_id,
-            'Mobile': searchdata.user_mobile,
-            'Village': searchdata.vill,
-            'Block': searchdata.block,
-            'District': searchdata.city,
-            'State': searchdata.state,
-            'Pin': searchdata.pin,
-          }).map(([key, value]) => (
-            <View style={styles.detailRow} key={key}>
-              <Text style={styles.detailLabel}>{key}</Text>
-              <Text style={styles.detailValue}>{value ?? 'N/A'}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.card}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.headerText}>Customer Details</Text>
+
+          {/* Centered Service Image */}
+       
+          <View style={styles.imageContainer}>
+            <Image source={{ uri: `https://righten.in/public/admin/assets/img/service_icon/${item.service_icon}` }} style={styles.serviceImage} />
           </View>
+         
+
           {Object.entries({
-            'Name': searchdata.name,
-            'Mobile': searchdata.mobile,
-            'TXN': searchdata.txn_id,
-            'UTR': searchdata.utr_no,
-          }).map(([key, value]) => (
-            <View style={styles.detailRow} key={key}>
-              <Text style={styles.detailLabel}>{key}</Text>
-              <Text style={styles.detailValue}>{value ?? 'N/A'}</Text>
-            </View>
-          ))}
+              'Service': item.service_name,
+              'Type': item.sub_service,
+              'Name': item.customer_name,
+              'Mobile': searchdata.mobile,
+              'Txn Id': item.txn_id,
+              'Amount': item.amount,
+              'UTR No': item.utr,
+              'Payment Status': item.status,
+              'Service Status': item.service_status,
+              'Date': item.date,
+            }).map(([key, value]) => (
+              <View style={styles.detailRow} key={key}>
+                <Text style={styles.detailLabel}>{key}</Text>
+
+                {(key === 'Payment Status' || key === 'Service Status') ? (
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      {
+                        backgroundColor: 
+                          value === 'Success' ? '#22cc62' : 
+                          value === 'Reject' ? 'red' : 
+                          value === 'Pending' ? 'orange' : 
+                          'gray', // Default to gray if no match
+                      },
+                    ]}
+                  >
+                    <Text style={styles.statusText}>{value ?? 'N/A'}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.detailValue}>{value ?? 'N/A'}</Text>
+                )}
+              </View>
+            ))}
+
         </View>
         <View style={styles.card}>
           <View style={styles.headerContainer}>
@@ -241,6 +256,13 @@ const styles = StyleSheet.create({
     color: '#000000',
     paddingVertical: 10,
   },
+ 
+  serviceImage: {
+    width: 80, // Set the image width
+    height: 80, // Set the image height
+    marginTop: -30,
+    //borderRadius: 50, // Optional: make the image circular
+  },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
@@ -248,12 +270,27 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     width: 210,
+    //alignItems: 'right',
     fontSize: 16,
     color: '#000000',
+    fontWeight: 'bold',
   },
   detailValue: {
     fontSize: 16,
     color: '#000000',
+    fontWeight: 'bold',
+  },
+  statusBadge: {
+    paddingHorizontal: 10, // Add space around the text
+    paddingVertical: 2, // Vertical padding
+    borderRadius: 5, // Rounded corners
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffffff', // White text color
   },
   headerContainer: {
     alignItems: 'center',

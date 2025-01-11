@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View, Image, Platform, ActivityIndicator, FlatList, NativeModules, ScrollView, Button, Alert, PermissionsAndroid, Linking } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View, Platform, ActivityIndicator, FlatList, NativeModules, ScrollView, Button, Alert, PermissionsAndroid, Linking } from 'react-native'
 import React, { useState, useEffect } from 'react'
 import { BackHandler } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
-const History = ({ navigation }) => {
+const HistoryBackup = ({ navigation }) => {
   const isFocused = useIsFocused();
 
   const [startDate, setStartDate] = useState(new Date());
@@ -215,96 +215,68 @@ const History = ({ navigation }) => {
 
   const renderItem = ({ item }) => {
     return (
-      <View style={{ padding: 5 }}>
-        <View style={styles.card}>
-          {/* Row Container */}
-          <View style={styles.row}>
-            
-            {/* Left Column: Service Icon */}
-            <View style={styles.iconContainer}>
-              <Image 
-                source={{ uri: `https://righten.in/public/admin/assets/img/service_icon/${item.service_icon}` }} 
-                style={styles.serviceIcon} 
-              />
-            </View>
+      <View>
+        <View style={{ padding: 10, }}>
+          <View style={styles.userContainer}> 
+            <View style={styles.card}>
+              <View style={styles.row}>
+                <View style={styles.detailsContainer}>
+                <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Name</Text>
+                    <Text style={styles.infoText}>{item.customer_name}</Text>
+                  </View>
+
+                   {/* Display Service Name */}
+                   <View style={styles.infoRow}>
+                    <Text style={styles.infoText}>{item.service_name}</Text>
+                    <Text style={styles.infoText}>{item.sub_service}</Text>
+
+                  </View>
+
+                  {/* Display Amount */}
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Amount</Text>
+                    <Text style={styles.infoText}>{item.amount}</Text>
+                  </View>
+
+                  {/* Display Customer Name */}
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Utr no</Text>
+                    <Text style={styles.infoText}>{item.utr}</Text>
+                  </View>
+
+                  {/* Display Status */}
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Status</Text>
+                    <Text style={[styles.infoText, { backgroundColor: item.status === 'Success' ? '#22cc62' : 'red' }]}>
+                      {item.status}
+                    </Text>
+                  </View>
+
+
+                  {/* Display Date */}
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Date</Text>
+                    <Text style={styles.infoText}>{item.date}</Text>
+                  </View>
   
-            {/* Middle Column: Details */}
-            <View style={styles.detailsContainer}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Name</Text>
-                <Text style={styles.infoText}>{item.customer_name}</Text>
-              </View>
-  
-              <View style={styles.infoRow}>
-                <Text style={styles.infoText}>{item.service_name}</Text>
-                <Text style={styles.infoText}>{item.sub_service}</Text>
-              </View>
-  
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Amount</Text>
-                <Text style={styles.infoText}>{item.amount}</Text>
-              </View>
-  
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Utr no</Text>
-                <Text style={styles.infoText}>{item.utr}</Text>
-              </View>
-  
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Payment Status</Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: item.status === 'Success' ? '#22cc62' : 'red' },
-                  ]}
-                >
-                  <Text style={styles.statusText}>{item.status}</Text>
+                  {/* Display Transaction ID */}
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Txn id</Text>
+                    <Text style={styles.infoText}>{item.txn_id}</Text>
+                  </View>
+
                 </View>
               </View>
-  
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Service Status</Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor: 
-                        item.service_status === 'Success' ? '#22cc62' : 
-                        item.service_status === 'Reject' ? 'red' : 
-                        item.service_status === 'Pending' ? 'orange' : 
-                        'gray', // Default to gray if no match
-                    },
-                  ]}
-
-                >
-                  <Text style={styles.statusText}>{item.service_status}</Text>
-                </View>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Date</Text>
-                <Text style={styles.infoText}>{item.date}</Text>
-              </View>
-  
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Txn ID</Text>
-                <Text style={styles.infoText}>{item.txn_id}</Text>
-              </View>
+              <TouchableOpacity style={styles.showButton} onPress={() => navigation.navigate('ShowDetails', { item: item })}>
+                <Text style={styles.showButtonText}>Details</Text>
+              </TouchableOpacity>
             </View>
-
           </View>
-  
-          {/* Details Button */}
-          <TouchableOpacity
-            style={styles.showButton}
-            onPress={() => navigation.navigate('ShowDetails', { item: item })}
-          >
-            <Text style={styles.showButtonText}>Details</Text>
-          </TouchableOpacity>
         </View>
       </View>
     );
   };
-  
 
   return (
     <View style={styles.container}>
@@ -321,14 +293,14 @@ const History = ({ navigation }) => {
                 display="spinner"
                 onChange={handleStartDateChange}
                 maximumDate={new Date()}
-                minimumDate={new Date(1900, 0, 1)}
+minimumDate={new Date(1900, 0, 1)}
               />
             )}
           </View>
   
           <View style={styles.datePickerWrapper}>
             <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.dateButton}>
-              <Text style={styles.dateButtonText}>{endDate.toDateString()}</Text>
+              <Text style={styles.dateButtonText}>To:{endDate.toDateString()}</Text>
             </TouchableOpacity>
             {showEndPicker && (
               <DateTimePicker
@@ -337,7 +309,7 @@ const History = ({ navigation }) => {
                 display="spinner"
                 onChange={handleEndDateChange}
                 maximumDate={new Date()}
-                minimumDate={new Date(1900, 0, 1)}
+minimumDate={new Date(1900, 0, 1)}
               />
             )}
           </View>
@@ -352,7 +324,7 @@ const History = ({ navigation }) => {
           setOpen={setDropdownOpen}
           setValue={setValue}
           setItems={setItems}
-          placeholder="Select a Service Category"
+          placeholder="Select a service category"
           style={styles.dropdown}
           dropDownContainerStyle={styles.dropdownList}
         />
@@ -372,11 +344,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  userContainer: {
+    flex: 1,
+    marginBottom:-9,
+  },
   card: {
     width: '100%',
     borderRadius: 15,
     backgroundColor: '#ffffff',
     padding: 10,
+    // marginVertical: 10,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -387,28 +364,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
-  },
-  iconContainer: {
-    width: '20%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  serviceIcon: {
-    width: 80,
-    height: 80,
-    resizeMode: 'contain',
+    // marginVertical: 5,
   },
   detailsContainer: {
-    width: '80%',
     flexDirection: 'column',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    flex: 1,
   },
-
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 1,
+    alignItems: 'center',
+    width: '100%',
   },
   infoLabel: {
     fontSize: 16,
@@ -416,21 +382,10 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   infoText: {
+    fontSize: 18,
     fontSize: 16,
     fontWeight: '500',
     color: '#000000',
-  },
-  statusBadge: {
-    paddingHorizontal: 10, // Add space around the text
-    paddingVertical: 2, // Vertical padding
-    borderRadius: 5, // Rounded corners
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff', // White text color
   },
   showButton: {
     borderColor: '#ffcb0a',
@@ -439,13 +394,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     alignItems: 'center',
     marginTop: 10,
+    borderWidth: 2,
   },
   showButtonText: {
     color: '#000000',
     fontSize: 14,
     fontWeight: 'bold',
   },
-
   datePickersContainer: {
     paddingLeft:7,
   },
@@ -472,19 +427,19 @@ const styles = StyleSheet.create({
   dropdownContainer: {
     justifyContent: 'center',
     width: '100%',
-    height:10,
-    paddingBottom:50,
-    padding:10,
+        height:10,
+paddingBottom:50,
+padding:10,
+    // marginHorizontal: ,
     flexDirection: 'row'
   },
   dropdown: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fafafa',
   },
   dropdownList: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fafafa',
     fontSize: 20
   },
-
 });
 
-export default History;
+export default HistoryBackup;

@@ -48,8 +48,8 @@ android {
         applicationId "com.righten"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 5
+        versionName "5.0"
    
     }
 
@@ -60,14 +60,14 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        // release {
-        //     if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
-        //         storeFile file(MYAPP_UPLOAD_STORE_FILE)
-        //         storePassword MYAPP_UPLOAD_STORE_PASSWORD
-        //         keyAlias MYAPP_UPLOAD_KEY_ALIAS
-        //         keyPassword MYAPP_UPLOAD_KEY_PASSWORD
-        //     }
-        // }
+        release {
+            if (project.hasProperty('MY_UPLOAD_KEY')) {
+                storeFile file('my-upload-key.keystore') // Your actual keystore path
+                storePassword 'uploadkey' // Keystore password (change it)
+                keyAlias 'upload-key' // Your key alias (change it)
+                keyPassword 'uploadkey' // Key password (change it)
+            }
+        }
     }
 
     buildTypes {
@@ -75,32 +75,31 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+
+    // App bundle config
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+    }
 }
 
 dependencies {
-    // React Native dependencies
+
     implementation("com.facebook.react:react-android")
     implementation project(':react-native-compressor')
-    implementation project(':react-native-cashfree-pg-sdk')
-    
-    // Cashfree SDK dependency
-    implementation 'phonepe.intentsdk.android.release:IntentSDK:2.4.2' // PhonePe SDK
-
-    //implementation 'com.cashfree.pg:pg-sdk:2.0.0'
-
-
-    // Facebook Fresco (optional for image loading)
     implementation 'com.facebook.fresco:animated-gif:2.5.0'
+    implementation 'in.payu:phonepe-intent:1.8.3'
 
-    //implementation 'com.payu.custombrowser:payu-custom-browser:8.3.2'
-    //implementation files('libs/payu-custom-browser-8.3.2.jar')
-
-
+    // React Native dependencies
+    // implementation("com.facebook.react:react-android")
+    // implementation project(':react-native-compressor')
+    // implementation 'phonepe.intentsdk.android.release:IntentSDK:2.4.2'
+    // implementation 'com.facebook.android:facebook-android-sdk:16.0.1'
 
     // Flipper (for debugging in debug mode)
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")

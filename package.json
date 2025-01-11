@@ -19,7 +19,7 @@
     "axios": "^1.7.4",
     "js-sha512": "^0.9.0",
     "npm": "^10.8.2",
-    "payu-non-seam-less-react": "^3.2.3",
+    "payu-non-seam-less-react": "^3.2.4",
     "qs": "^6.13.0",
     "react": "18.2.0",
     "react-native": "0.72.12",
