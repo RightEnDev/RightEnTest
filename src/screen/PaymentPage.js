@@ -1,4 +1,4 @@
-import { Alert, Button, BackHandler, NativeEventEmitter, SafeAreaView, TouchableOpacity, Modal, Image, StyleSheet, Text, View } from 'react-native'
+import { Alert, Button, BackHandler, NativeEventEmitter, NativeModules, SafeAreaView, TouchableOpacity, Modal, Image, StyleSheet, Text, View } from 'react-native'
 import React, { useEffect, useState,useCallback} from 'react'
 import axios from 'axios';
 import qs from 'qs';
@@ -170,63 +170,6 @@ const lunchPayUPayment=()=>{
 }
 
 
-// **Lunch Payment for Generic Intent & UPI**
-// const lunchPayUPayment = async () => {
-//   try {
-//     const params = createPaymentParams();
-
-//     // Open PayU Checkout Screen
-//     PayUBizSdk.openCheckoutScreen(params);
-
-//     // Handle Callback (Success or Failure)
-//     PayUBizSdk.setCallbackHandler((response) => {
-//       console.log("Payment Response: ", response);
-
-//       // Check if the payment is from Generic Intent or UPI
-//       if (response && response.status === "SUCCESS") {
-//         if (response.paymentMode === "UPI") {
-//           console.log("UPI Payment Successful");
-//         } else {
-//           console.log("Generic Intent Payment Successful");
-//         }
-
-//         // Hit your success callback URL or validate payment manually
-//         validatePayment(response.transactionId);
-//       } else {
-//         console.error("Payment Failed: ", response);
-//         // Handle Failure
-//       }
-//     });
-//   } catch (error) {
-//     console.error("Payment Error: ", error);
-//   }
-// };
-
-
-// **Manual Payment Validation (Backend Call)**
-// const validatePayment = async (txnid) => {
-//   try {
-//     const formBody = `txnid=${encodeURIComponent(txnid)}`;
-
-//     const response = await fetch('https://righten.in/api/services/check_status_payU', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/x-www-form-urlencoded',
-//       },
-//       body: formBody,
-//     });
-
-//     const result = await response.json();
-//     if (result.status === 'success') {
-//       console.log('Payment validated successfully');
-//     } else {
-//       console.error('Payment validation failed:', result.message);
-//     }
-//   } catch (error) {
-//     console.error('Error validating payment:', error);
-//   }
-// };
-
 
 
   const displayAlert = (title, value) => {
@@ -246,13 +189,13 @@ const lunchPayUPayment=()=>{
   //    }, 2000);
   //  };
 
-   const onPaymentSuccess = async (e) => {
+  const onPaymentSuccess = async (e) => {
     //const transactionId = merchantTransactionId;
-    console.log('check status txn_id in payment id: ', txn_id);
+    //console.log('check status txn_id in payment id: ', txn_id);
     //console.log('check status txn_id in payment id: ', merchantTransactionId);
-    console.log('Payment Success Response:', e.payuResponse);
+    //console.log('Payment Success Response:', e.payuResponse);
     //console.log('PayU Response Txnid: ', payuResponse.txnid);
-    console.log('Check Status Txn Id: ', txn_id);
+    //console.log('Check Status Txn Id: ', txn_id);
 
     if (!txn_id) {
       console.error('Transaction ID is missing');
@@ -316,7 +259,6 @@ const lunchPayUPayment=()=>{
   };
 
   useEffect(() => {
-
     const eventEmitter = new NativeEventEmitter(PayUBizSdk);
     const payUOnPaymentSuccess = eventEmitter.addListener('onPaymentSuccess', onPaymentSuccess);
     const payUOnPaymentFailure = eventEmitter.addListener('onPaymentFailure', onPaymentFailure);
@@ -324,7 +266,6 @@ const lunchPayUPayment=()=>{
     const payUOnError = eventEmitter.addListener('onError', onError);
     const payUGenerateHash = eventEmitter.addListener('generateHash', generateHash);
 
-    // Cleanup on component unmount
     return () => {
       payUOnPaymentSuccess.remove();
       payUOnPaymentFailure.remove();
@@ -359,6 +300,26 @@ const lunchPayUPayment=()=>{
               style={{ width: 150, height: 150 }}
             />
             <Text style={styles.modalText}>Payment Successful!</Text>
+
+            {/* Go to Main Page button */}
+            <Button title="Ok" onPress={() => navigation.navigate('main')} />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal for Payment Failed */}
+
+      <Modal transparent visible={failureModalVisible}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            {/* Lottie Animation (Success GIF) */}
+            <Image
+              source={require('../../assets/error.gif')} // Replace with your own JSON animation file
+              autoPlay
+              loop={false}
+              style={{ width: 150, height: 150 }}
+            />
+            <Text style={styles.modalText}>Payment Failed!</Text>
 
             {/* Go to Main Page button */}
             <Button title="Ok" onPress={() => navigation.navigate('main')} />
