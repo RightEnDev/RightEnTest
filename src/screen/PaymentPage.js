@@ -234,17 +234,55 @@ const lunchPayUPayment=()=>{
   };
 
 
-  onPaymentSuccess = e => {
-     console.log(e.payuResponse);
-     //displayAlert('Success', 'Payment Success');
-     setSuccessModalVisible(true);
+  // onPaymentSuccess = e => {
+  //    console.log(e.payuResponse);
+  //    //displayAlert('Success', 'Payment Success');
+  //    setSuccessModalVisible(true);
 
-     // Navigate to the main screen after 1 second
-     setTimeout(() => {
-       navigation.navigate('main');
-       setSuccessModalVisible(false); // Close the modal after navigation
-     }, 2000);
-   };
+  //    // Navigate to the main screen after 1 second
+  //    setTimeout(() => {
+  //      navigation.navigate('main');
+  //      setSuccessModalVisible(false); // Close the modal after navigation
+  //    }, 2000);
+  //  };
+
+   const onPaymentSuccess = async (e) => {
+    //const transactionId = merchantTransactionId;
+    console.log('check status txn_id in payment id: ', txn_id);
+    //console.log('check status txn_id in payment id: ', merchantTransactionId);
+    console.log('Payment Success Response:', e.payuResponse);
+    //console.log('PayU Response Txnid: ', payuResponse.txnid);
+    console.log('Check Status Txn Id: ', txn_id);
+
+    if (!txn_id) {
+      console.error('Transaction ID is missing');
+      setTimeout(() => navigation.navigate('main'), 1000);
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        'https://righten.in/api/services/check_status_payU',
+        qs.stringify({ txnid: txn_id }), // Pass correct transaction ID
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+
+      console.log('Payment Status Response:', response.data);
+
+      if (response.data.status === true) {
+        setSuccessModalVisible(true);
+        setTimeout(() => navigation.navigate('main'), 1000);
+      } else {
+        console.error('Payment verification failed:', response.data.message);
+        setTimeout(() => navigation.navigate('main'), 1000);
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error.message);
+      console.log(e);
+      setTimeout(() => navigation.navigate('main'), 1000);
+    }
+  };
+
 
   
   const onPaymentFailure = e => {
