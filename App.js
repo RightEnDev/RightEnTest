@@ -1,6 +1,7 @@
 import { StyleSheet, StatusBar, Text, Image, View, Dimensions, SafeAreaView } from 'react-native'
 import React, { useState } from 'react'
 import AppNav from './src/navigation/AppNav'
+import PayUBizSdk from 'payu-non-seam-less-react'
 import axios from 'axios'
 const LOGO = require('./assets/images/logo.png');
 const { width, height } = Dimensions.get('window');
@@ -8,7 +9,7 @@ const { width, height } = Dimensions.get('window');
 const App = () => {
   const [load, setload] = useState(false);
 
-  
+  //PayUBizSdk.enableDebug(true);
 
   const shouldLoad = load
   // console.log(shouldLoad);

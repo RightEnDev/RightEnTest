@@ -2,7 +2,7 @@
 
 buildscript {
     ext {
-        buildToolsVersion = "33.0.0"
+        buildToolsVersion = "33.0.1"
         minSdkVersion = 21
         compileSdkVersion = 34
         targetSdkVersion = 34
@@ -15,8 +15,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle")
-        //classpath("com.android.tools.build:gradle:7.0.4")
+        //classpath("com.android.tools.build:gradle")
+        //classpath("com.android.tools.build:gradle:8.1.0")
+        classpath 'com.android.tools.build:gradle:7.4.0'  // Update this if needed
         classpath("com.facebook.react:react-native-gradle-plugin")
     }
 }
@@ -29,5 +30,6 @@ allprojects {
             // PhonePe SDK repository
             url "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android"
         }
+
     }
 }

@@ -40,6 +40,8 @@ const PaymentPage = ({ route, navigation }) => {
 
   const [userCredential, setUserCredential] = useState('');
 
+  const [isProcessing, setIsProcessing] = useState(false);
+
 
     useFocusEffect(
       React.useCallback(() => {
@@ -164,12 +166,30 @@ const PaymentPage = ({ route, navigation }) => {
   }
 
 
-const lunchPayUPayment=()=>{
-    PayUBizSdk.openCheckoutScreen(createPaymentParams());
+// const lunchPayUPayment=()=>{
 
-}
+//     PayUBizSdk.enableDebug(true);
+//     console.log('button click');
+//     PayUBizSdk.openCheckoutScreen(createPaymentParams());
 
+// }
 
+const lunchPayUPayment = () => {
+  if (isProcessing) {
+      Alert.alert('Processing', 'Please wait for the current transaction to complete.');
+      return;
+  }
+
+  setIsProcessing(true);
+
+  try {
+      PayUBizSdk.openCheckoutScreen(createPaymentParams());
+  } catch (error) {
+      console.error('Error launching payment:', error.message);
+  } finally {
+      setIsProcessing(false);
+  }
+};
 
 
   const displayAlert = (title, value) => {
@@ -193,9 +213,8 @@ const lunchPayUPayment=()=>{
     //const transactionId = merchantTransactionId;
     //console.log('check status txn_id in payment id: ', txn_id);
     //console.log('check status txn_id in payment id: ', merchantTransactionId);
-    //console.log('Payment Success Response:', e.payuResponse);
-    //console.log('PayU Response Txnid: ', payuResponse.txnid);
-    //console.log('Check Status Txn Id: ', txn_id);
+    // console.log('Payment Success Response:', e.payuResponse);
+    // console.log('Check Status Txn Id: ', txn_id);
 
     if (!txn_id) {
       console.error('Transaction ID is missing');
@@ -214,7 +233,10 @@ const lunchPayUPayment=()=>{
 
       if (response.data.status === true) {
         setSuccessModalVisible(true);
-        setTimeout(() => navigation.navigate('main'), 1000);
+        setTimeout(() => {
+        navigation.navigate('main');
+        setSuccessModalVisible(false); // Close the modal after navigation
+      }, 2000);
       } else {
         console.error('Payment verification failed:', response.data.message);
         setTimeout(() => navigation.navigate('main'), 1000);
@@ -230,8 +252,12 @@ const lunchPayUPayment=()=>{
   
   const onPaymentFailure = e => {
     console.error('Payment Failure Response:', e.payuResponse);
-    setTimeout(() => navigation.navigate('main'), 1000);
+    
     setFailureModalVisible(true);
+    setTimeout(() => {
+      navigation.navigate('main');
+      setFailureModalVisible(false); // Close the modal after navigation
+    }, 2000);
   };
 
   const onPaymentCancel = e => {
@@ -258,8 +284,31 @@ const lunchPayUPayment=()=>{
     sendBackHash(e.hashName, e.hashString + merchantSalt);
   };
 
+  // useEffect(() => {
+  //   const eventEmitter = new NativeEventEmitter(PayUBizSdk);
+  //   const payUOnPaymentSuccess = eventEmitter.addListener('onPaymentSuccess', onPaymentSuccess);
+  //   const payUOnPaymentFailure = eventEmitter.addListener('onPaymentFailure', onPaymentFailure);
+  //   const payUOnPaymentCancel = eventEmitter.addListener('onPaymentCancel', onPaymentCancel);
+  //   const payUOnError = eventEmitter.addListener('onError', onError);
+  //   const payUGenerateHash = eventEmitter.addListener('generateHash', generateHash);
+
+  //   return () => {
+  //     payUOnPaymentSuccess.remove();
+  //     payUOnPaymentFailure.remove();
+  //     payUOnPaymentCancel.remove();
+  //     payUOnError.remove();
+  //     payUGenerateHash.remove();
+  //   };
+  // }, [merchantSalt]);
+
+
   useEffect(() => {
-    const eventEmitter = new NativeEventEmitter(PayUBizSdk);
+    //const eventEmitter = new NativeEventEmitter(PayUBizSdk);
+       const eventEmitter =
+        PayUBizSdk && typeof PayUBizSdk.addListener === 'function'
+        ? new NativeEventEmitter(PayUBizSdk)
+        : new NativeEventEmitter();
+
     const payUOnPaymentSuccess = eventEmitter.addListener('onPaymentSuccess', onPaymentSuccess);
     const payUOnPaymentFailure = eventEmitter.addListener('onPaymentFailure', onPaymentFailure);
     const payUOnPaymentCancel = eventEmitter.addListener('onPaymentCancel', onPaymentCancel);
@@ -267,15 +316,35 @@ const lunchPayUPayment=()=>{
     const payUGenerateHash = eventEmitter.addListener('generateHash', generateHash);
 
     return () => {
-      payUOnPaymentSuccess.remove();
-      payUOnPaymentFailure.remove();
-      payUOnPaymentCancel.remove();
-      payUOnError.remove();
-      payUGenerateHash.remove();
+        // Ensure listeners are removed properly
+        payUOnPaymentSuccess?.remove();
+        payUOnPaymentFailure?.remove();
+        payUOnPaymentCancel?.remove();
+        payUOnError?.remove();
+        payUGenerateHash?.remove();
     };
-  }, [merchantSalt]);
+}, []);
 
 
+  // useEffect(() => {
+  //   const eventEmitter =
+  //     PayUBizSdk && typeof PayUBizSdk.addListener === 'function'
+  //       ? new NativeEventEmitter(PayUBizSdk)
+  //       : new NativeEventEmitter();
+  
+  //   const listeners = [
+  //     eventEmitter.addListener('onPaymentSuccess', onPaymentSuccess),
+  //     eventEmitter.addListener('onPaymentFailure', onPaymentFailure),
+  //     eventEmitter.addListener('onPaymentCancel', onPaymentCancel),
+  //     eventEmitter.addListener('onError', onError),
+  //     eventEmitter.addListener('generateHash', generateHash),
+  //   ];
+  
+  //   return () => {
+  //     listeners.forEach((listener) => listener.remove());
+  //   };
+  // }, [merchantSalt]);
+  
 
 
   return (
