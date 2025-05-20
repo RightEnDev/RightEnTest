@@ -3,6 +3,7 @@ import {
   Button,
   PermissionsAndroid,
   StatusBar,
+  Modal,
   StyleSheet,
   Text,
   View,
@@ -253,7 +254,7 @@ const ImagePicker = ({ route, navigation }) => {
 
 
   const renderItem = ({ item }) => (
-    <Image source={{ uri: item }} style={styles.image} />
+    <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
   );
 
   return (
@@ -284,34 +285,44 @@ const ImagePicker = ({ route, navigation }) => {
         </TouchableOpacity> */}
 
         <TouchableOpacity
-          style={styles.button}
+          style={styles.cameraButton}
           onPress={() => handleChooseImage('camera')}
         >
-          <View style={styles.buttonInner}>
-            <SvgXml
-              xml={`<svg width="60px" height="60px" viewBox="0 -2 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>camera</title> <desc>Created with Sketch Beta.</desc> <defs> </defs> <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage"> <g id="Icon-Set-Filled" sketch:type="MSLayerGroup" transform="translate(-258.000000, -467.000000)" fill="#000000"> <path d="M286,471 L283,471 L282,469 C281.411,467.837 281.104,467 280,467 L268,467 C266.896,467 266.53,467.954 266,469 L265,471 L262,471 C259.791,471 258,472.791 258,475 L258,491 C258,493.209 259.791,495 262,495 L286,495 C288.209,495 290,493.209 290,491 L290,475 C290,472.791 288.209,471 286,471 Z M274,491 C269.582,491 266,487.418 266,483 C266,478.582 269.582,475 274,475 C278.418,475 282,478.582 282,483 C282,487.418 278.418,491 274,491 Z M274,477 C270.687,477 268,479.687 268,483 C268,486.313 270.687,489 274,489 C277.313,489 280,486.313 280,483 C280,479.687 277.313,477 274,477 L274,477 Z" id="camera" sketch:type="MSShapeGroup"> </path> </g> </g> </g></svg>`}
-            />
-            <Text style={styles.buttonText}>Camera</Text>
-          </View>
+            <View style={styles.cameraContent}>
+              <View style={styles.cameraIconContainer}>
+                <SvgXml
+                  xml={`<svg width="30px" height="30px" viewBox="0 -2 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="#ffffff"><g id="SVGRepo_iconCarrier"> <title>camera</title> <g id="Icon-Set-Filled" transform="translate(-258.000000, -467.000000)" fill="#ffffff"> <path d="M286,471 L283,471 L282,469 C281.411,467.837 281.104,467 280,467 L268,467 C266.896,467 266.53,467.954 266,469 L265,471 L262,471 C259.791,471 258,472.791 258,475 L258,491 C258,493.209 259.791,495 262,495 L286,495 C288.209,495 290,493.209 290,491 L290,475 C290,472.791 288.209,471 286,471 Z M274,491 C269.582,491 266,487.418 266,483 C266,478.582 269.582,475 274,475 C278.418,475 282,478.582 282,483 C282,487.418 278.418,491 274,491 Z M274,477 C270.687,477 268,479.687 268,483 C268,486.313 270.687,489 274,489 C277.313,489 280,486.313 280,483 C280,479.687 277.313,477 274,477 L274,477 Z" id="camera"> </path> </g> </g></svg>`}
+                />
+              </View>
+              <Text style={styles.buttonText}>Take a Photo</Text>
+            </View>
         </TouchableOpacity>
       </View>
 
-      <FlatList
+      {/* <FlatList
         data={photoUris}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
         numColumns={3}
         contentContainerStyle={styles.scrollContainer}
-      />
-
-      <TouchableOpacity onPress={uploadPhotos}>
-        <View style={{
-          backgroundColor: '#FFCB0A', margin: 10, marginTop: 30, alignItems: 'center', justifyContent: 'center', height: 70, width: '70%', alignSelf: 'center'
-          , borderRadius: 15
-        }}>
-          <Text style={{ height: 50, textAlign: 'center', fontSize: 30, fontWeight: 'bold', color: 'black' }}>submit / pay now</Text>
-        </View>
-
+      /> */}
+      {photoUris.length > 0 ? (
+        <FlatList
+          data={photoUris}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={3}
+          contentContainerStyle={styles.scrollContainer}
+        />
+      ) : (
+        <Text style={{ textAlign: "center", margin: 5 }}>No images selected</Text>
+      )}
+      <TouchableOpacity
+        style={[styles.reuploadButton, photoUris.length === 0 && styles.disabledButton]}
+        onPress={uploadPhotos}
+        disabled={photoUris.length === 0}
+      >
+        <Text style={styles.reuploadText}>Upload / Pay</Text>
       </TouchableOpacity>
     </View>
   );
@@ -335,12 +346,14 @@ const styles = StyleSheet.create({
     color: '#009743'
   },
   image: {
-    width: screenWidth / 3,
-    marginRight: '2%',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#cccccc",
+    width: screenWidth / 3.5,
+    marginRight: '0%',
     height: undefined,
     aspectRatio: 1,
-    marginTop: 20,
-    alignSelf: 'center',
+    margin: 5,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -358,12 +371,57 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 15,
   },
+  // buttonText: {
+  //   color: 'black',
+  //   fontSize: 24,
+  //   fontWeight: 'bold',
+  //   width: 150,
+  //   textAlign: 'center',
+  // },
+
+  cameraButton: {
+    backgroundColor: "#007bff",  // Professional blue
+    borderRadius: 12,            // Smooth rounded corners
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",        // Icon & text same row
+    elevation: 5,                // Shadow effect
+    marginVertical: 10,
+    width: "100%",                  // Fixed width
+  },
+  cameraContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cameraIconContainer: {
+    backgroundColor: "#0056b3",  // Darker blue shade
+    padding: 8,
+    borderRadius: 50,            // Circle background for icon
+    marginRight: 8,              // Space between icon & text
+  },
   buttonText: {
-    color: 'black',
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
-    width: 150,
-    textAlign: 'center',
+    marginTop: 5,
+    color: 'white',
+  },
+  disabledButton: {
+    backgroundColor: "#ccc", // Gray color to indicate disabled state
+    opacity: 0.6, // Reduce opacity
+  },
+  reuploadButton: {
+    backgroundColor: '#FFCB0A',
+    paddingVertical: 15,
+    paddingHorizontal: 50,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  reuploadText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'black',
   },
 });
 

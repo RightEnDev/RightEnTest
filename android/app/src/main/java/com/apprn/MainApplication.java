@@ -77,7 +77,7 @@ public class MainApplication extends Application implements ReactApplication {
     new Thread(() -> {
       try {
         // Define the API URL
-        URL url = new URL("https://iamankanghosh.github.io/VerifyMyJson/checkJson.json");
+        URL url = new URL("https://righten.in/api/app_access");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
 
@@ -123,4 +123,7 @@ public class MainApplication extends Application implements ReactApplication {
       new Handler().postDelayed(() -> System.exit(0), 2000); // Close app after showing message
     });
   }
+
+
+
 }

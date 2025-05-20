@@ -11,37 +11,32 @@ import { mobile_svg, settingsSVG, profileSVG, reportSVG, eye, eyeoff, nameSVG, D
 import Toast from 'react-native-toast-message';
 import DropDownPicker from 'react-native-dropdown-picker';
 
-const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_service_id, form_service_id, formSubmitUrl, navigation }) => {
+const Type8 = ({ service_data, label, cardtype, form_service_code, form_sub_service_id, form_service_id, formSubmitUrl, navigation }) => {
     // console.log("hello");
     // console.log(form_service_code,form_sub_service_id,form_service_id);
     const [formResponse, setformResponse] = useState([]);
 
     const [panType, setPanType] = useState('');
     const [name, setName] = useState('');
-
-    const [DD, setDD] = useState('');
-    const [MM, setMM] = useState('');
-    const [YYYY, setYYYY] = useState('');
     const [dob, setDob] = useState('');
     const [showPicker, setShowPicker] = useState(false);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [fatherName, setFatherName] = useState('');
-    const [motherName, setMotherName] = useState('');
-    const [spouseName, setSpouseName] = useState('');
     const [mobileNo, setMobileNo] = useState('');
     const [edu, setEdu] = useState('');
-    const [reamrk, setRemark] = useState('');
     const [openState, setOpenState] = useState(false);
     const [state, setState] = useState();
     const [itemsState, setItemsState] = useState([
-        { label: 'Graduate And Above', value: 'option1' },
-        { label: '7th Pass Or Less', value: 'option2' },
-        { label: '10th Pass And Above', value: 'option3' },
-        { label: 'Between 8th And 9th Standard', value: 'option4' },
-
+        { label: 'A+', value: 'option1' },
+        { label: 'A-', value: 'option2' },
+        { label: 'B+', value: 'option3' },
+        { label: 'B-', value: 'option4' },
+        { label: 'AB+', value: 'option5' },
+        { label: 'AB-', value: 'option6' },
+        { label: 'O+', value: 'option7' },
+        { label: 'O-', value: 'option8' },
         
     ]);
-
     // Modal state gula
     const [modalMessage, setModalMessage] = useState('');
     const [modalTxnId, setModalTxnId] = useState('');
@@ -69,20 +64,7 @@ const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
             setSelectedDate(date);
         }
     };
-    const showSuccessToast = (txn_id) => {
-        Toast.show({
-            type: 'success',
-            text1: `successfull ✅  id:${txn_id}`,
-            text2: `Form submitted successfully !`,
-        });
-    };
-    const showErrorToast = (txn_id) => {
-        Toast.show({
-            type: 'error',
-            text1: 'Oops! 😔',
-            text2: 'Something went wrong. Please try again.',
-        });
-    };
+
 
     const handleSubmit = async () => {
         // Handle form submission here
@@ -98,12 +80,11 @@ const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
             name &&
             fatherName &&
             dateOfBirth &&
-            mobileNo && mobileNo.length === 10 &&
-            motherName && edu.label
+            dateOfBirth.match(/^\d{2}\/\d{2}\/\d{4}$/) && // Check correct date format (DD/MM/YYYY)
+            mobileNo && mobileNo.length === 10 && edu?.label
         ) {
-
-            // console.log('Submitted Data:', { user_id, panType, name, dateOfBirth, fatherName, mobileNo });
-
+            console.log("All fields are valid. Submitting form...");
+        
             const response = await axios.post(formSubmitUrl,
                 qs.stringify({
                     user_id: user_id,
@@ -112,21 +93,15 @@ const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
                     sub_service_id: form_sub_service_id,
                     name: name,
                     father_name: fatherName,
-                    mother_name:motherName,
-                    spouse_name:spouseName,
                     date_of_birth: dateOfBirth,
                     mobile: mobileNo,
-                    ed_data:edu.label,
-                    remarks:reamrk
-
+                    b_group: edu.label,
                 }),
                 {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 }
             );
-
+        
             if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
                 setModalMessage(response.data.message);
                 setModalTxnId(response.data.data.txn_id);
@@ -145,26 +120,34 @@ const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
                 setformResponse(response.data.data);
                 setPanType('');
                 setName('');
-                setDD('');
-                setMM('');
-                setYYYY('');
                 setDob('');
-                setShowPicker(false);
                 setSelectedDate(new Date());
                 setFatherName('');
                 setMobileNo('');
 
-
+        
             } else {
                 setModalMessage("Something went wrong. Please try again.");
                 setModalTxnId('');
                 setIsSuccessModalVisible(true);
             }
-            // console.log(response.data.status === 'success');
         } else {
-            Alert.alert("Enter all field");
+            console.log("Form validation failed! Check missing fields.");
+            Alert.alert("Enter all fields correctly!");
+            console.log("user_id:", user_id);
+            console.log("form_service_id:", form_service_id);
+            console.log("form_service_code:", form_service_code);
+            console.log("form_sub_service_id:", form_sub_service_id);
+            console.log("name:", name);
+            console.log("fatherName:", fatherName);
+            console.log("dateOfBirth:", dateOfBirth);
+            console.log("mobileNo:", mobileNo);
+            console.log("edu.label:", edu?.label);
+            console.log("edu:", edu);
+
 
         }
+        
 
 
 
@@ -254,30 +237,6 @@ const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
                             placeholderTextColor="#666"
                         />
                     </View>
-
-                    <Text style={styles.label}>Mothers's Name <Text style={{ color: 'red' }}>*</Text></Text>
-                    <View style={styles.inputContainer}>
-                        <SvgXml xml={fatherNameSVG} style={styles.icon} />
-                        <TextInput
-                            style={styles.input}
-                            value={motherName}
-                            onChangeText={setMotherName}
-                            placeholder="Enter Mother's Name"
-                            placeholderTextColor="#666"
-                        />
-                    </View>
-
-                    <Text style={styles.label}>Spouse Name </Text>
-                    <View style={styles.inputContainer}>
-                        <SvgXml xml={fatherNameSVG} style={styles.icon} />
-                        <TextInput
-                            style={styles.input}
-                            value={spouseName}
-                            onChangeText={setSpouseName}
-                            placeholder="Enter Spouse Name"
-                            placeholderTextColor="#666"
-                        />
-                    </View>
                     
                     <Text style={styles.label}>Mobile No <Text style={{ color: 'red' }}>*</Text></Text>
                     <View style={styles.inputContainer}>
@@ -293,9 +252,9 @@ const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
                         />
                     </View>
 
-                    <Text style={styles.label}>Educational Qualification <Text style={{ color: 'red' }}>*</Text></Text>
+                    <Text style={styles.label}>Blood Group <Text style={{ color: 'red' }}>*</Text></Text>
                     <TouchableOpacity style={styles.dropdown} onPress={() => setOpenState(!openState)}>
-                        <Text style={styles.input}>{state ? state.label : "Select Educational Qualification"}</Text>
+                        <Text style={styles.input}>{state ? state.label : "Select Blood Group"}</Text>
                     </TouchableOpacity>
                     {openState && (
                         <ScrollView 
@@ -304,32 +263,12 @@ const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
                             keyboardShouldPersistTaps="handled" // ✅ Fix for tap issue when keyboard is open
                         >
                             {itemsState.map((item) => (
-                                <TouchableOpacity 
-                                    key={item.value} 
-                                    style={styles.dropdownItem} 
-                                    onPress={() => { 
-                                        setState(item);  
-                                        setEdu(item); 
-                                        setOpenState(false); 
-                                    }}
-                                >
+                                <TouchableOpacity key={item.value} style={styles.dropdownItem} onPress={() => { setState(item);  setEdu(item); setOpenState(false); }}>
                                     <Text style={styles.dropdownText}>{item.label}</Text>
                                 </TouchableOpacity>
                             ))}
                         </ScrollView>
                     )}
-
-                    <Text style={styles.label}>Remark </Text>
-                    <View style={styles.inputContainer}>
-                        <SvgXml xml={fatherNameSVG} style={styles.icon} />
-                        <TextInput
-                            style={styles.input}
-                            value={reamrk}
-                            onChangeText={setRemark}
-                            placeholder="Enter your remarks"
-                            placeholderTextColor="#666"
-                        />
-                    </View>
                     
                     <TouchableOpacity style={styles.button} onPress={handleSubmit}>
                         <Text style={styles.buttonText}>Submit</Text>
@@ -362,7 +301,7 @@ const Type5 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
     );
 }
 
-export default Type5
+export default Type8
 
 const styles = StyleSheet.create({
     container: {
@@ -382,7 +321,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
     },
     title: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 15,
@@ -419,7 +358,7 @@ const styles = StyleSheet.create({
     dropdown: {
         borderWidth: 1,
         borderColor: '#FFCB0A',
-        borderRadius: 8,
+        borderRadius: 10,
         padding: 10,
         backgroundColor: '#fff',
         marginBottom: 10,
@@ -432,7 +371,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: 'hidden',
     },
-    
     dropdownItem: {
         padding: 10,
         borderBottomWidth: 1,
@@ -442,7 +380,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     button: {
-        backgroundColor: '#009743',
+        backgroundColor: '#FFCB0A',
         paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',

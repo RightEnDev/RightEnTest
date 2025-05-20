@@ -1,56 +1,25 @@
 apply plugin: "com.android.application"
 apply plugin: "com.facebook.react"
+// apply plugin: 'com.google.gms.google-services'
 
-/**
- * This is the configuration block to customize your React Native Android app.
- * By default, you don't need to apply any configuration, just uncomment the lines you need.
- */
 react {
-    /* Folders */
-    // root = file("../")
-    // reactNativeDir = file("../node_modules/react-native")
-    // codegenDir = file("../node_modules/@react-native/codegen")
-    // cliFile = file("../node_modules/react-native/cli.js")
-
-    /* Variants */
-    // debuggableVariants = ["liteDebug", "prodDebug"]
-
-    /* Bundling */
-    // nodeExecutableAndArgs = ["node"]
-    // bundleCommand = "ram-bundle"
-    // bundleConfig = file(../rn-cli.config.js)
-    // bundleAssetName = "MyApplication.android.bundle"
-    // entryFile = file("../js/MyApplication.android.js")
-    // extraPackagerArgs = []
-
-    /* Hermes Commands */
-    // hermesCommand = "$rootDir/my-custom-hermesc/bin/hermesc"
-    // hermesFlags = ["-O", "-output-source-map"]
+    // Customize if needed
 }
 
-/**
- * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
- */
 def enableProguardInReleaseBuilds = false
-
-/**
- * The preferred build flavor of JavaScriptCore (JSC)
- */
-def jscFlavor = 'org.webkit:android-jsc:+' // Or change this as needed for ICU variant.
+def jscFlavor = 'org.webkit:android-jsc:+'
 
 android {
-    ndkVersion rootProject.ext.ndkVersion
-
-    compileSdkVersion rootProject.ext.compileSdkVersion
-
     namespace "com.righten"
+    ndkVersion rootProject.ext.ndkVersion
+    compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {
         applicationId "com.righten"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "5.0"
+        versionCode 9
+        versionName "1.0.3"
 
         buildConfigField "String", "PHONEPE_API_KEY", "\"7a9c42b8-a73c-45f6-8d4f-13728d0e1966\""
         buildConfigField "String", "PAYU_API_KEY", "\"3VBj9QFB59MzeKIXI11itF4zwTxVlA5Z\""
@@ -65,16 +34,16 @@ android {
         }
         release {
             if (project.hasProperty('MY_UPLOAD_KEY')) {
-                storeFile file('my-upload-key.keystore') // Your actual keystore path
-                storePassword 'uploadkey' // Keystore password (change it)
-                keyAlias 'upload-key' // Your key alias (change it)
-                keyPassword 'uploadkey' // Key password (change it)
+                storeFile file('my-upload-key.keystore')
+                storePassword 'uploadkey'
+                keyAlias 'upload-key'
+                keyPassword 'uploadkey'
             }
         }
     }
 
     buildFeatures {
-        buildConfig true  // Ensure this is enabled
+        buildConfig true
     }
 
     buildTypes {
@@ -93,20 +62,27 @@ dependencies {
     implementation("com.facebook.react:react-android")
     implementation project(':react-native-compressor')
     implementation 'com.facebook.fresco:animated-gif:2.5.0'
-    // Ensure you add PayU repository if needed
-    // implementation 'phonepe.intentsdk.android.release:IntentSDK:2.4.2'
+    implementation 'phonepe.intentsdk.android.release:IntentSDK:2.4.2'
+    //implementation libs.androidx.activity
 
-    // Use Maven or JCenter instead of flatDir if possible
     implementation 'in.payu:payu-checkout-pro:1.3.2'
 
-    // Flipper (for debugging in debug mode)
+    implementation "androidx.activity:activity:1.7.2"
+    implementation "androidx.activity:activity-ktx:1.7.2"
+
+    // Optional Firebase dependencies (uncomment if needed)
+    // implementation platform('com.google.firebase:firebase-bom:32.2.0')
+    // implementation 'com.google.firebase:firebase-messaging'
+    // implementation 'androidx.multidex:multidex:2.0.1'
+
+    // Flipper (Debug only)
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}")
     debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
-        exclude group:'com.squareup.okhttp3', module:'okhttp'
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
     debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}")
 
-    // Hermes for React Native (if enabled)
+    // JS engine: Hermes or JSC
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
@@ -114,6 +90,6 @@ dependencies {
     }
 }
 
-// Include native modules from react-native
+// Load native modules
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
 applyNativeModulesAppBuildGradle(project)

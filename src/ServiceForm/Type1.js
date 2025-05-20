@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, BackHandler, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
-import React, { useState, useCallback } from 'react';
+import { StyleSheet, Text, Modal, View, TextInput, Image, Button, TouchableOpacity, BackHandler, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,6 +26,10 @@ const Type1 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [fatherName, setFatherName] = useState('');
     const [mobileNo, setMobileNo] = useState('');
+    // Modal state gula
+    const [modalMessage, setModalMessage] = useState('');
+    const [modalTxnId, setModalTxnId] = useState('');
+    const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -49,27 +53,11 @@ const Type1 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
             setSelectedDate(date);
         }
     };
-    const showSuccessToast = (txn_id) => {
-        Toast.show({
-            type: 'success',
-            text1: `successfull ✅  id:${txn_id}`,
-            text2: `Form submitted successfully !`,
-        });
-    };
-    const showErrorToast = (txn_id) => {
-        Toast.show({
-            type: 'error',
-            text1: 'Oops! 😔',
-            text2: 'Something went wrong. Please try again.',
-        });
-    };
 
     const handleSubmit = async () => {
-        // Handle form submission here
-
         const user_id = await AsyncStorage.getItem('us_id');
         const dateOfBirth = dob;
-
+    
         if (
             user_id &&
             form_service_id &&
@@ -80,162 +68,191 @@ const Type1 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
             dateOfBirth &&
             mobileNo && mobileNo.length === 10
         ) {
-
-            // console.log('Submitted Data:', { user_id, panType, name, dateOfBirth, fatherName, mobileNo });
-
-            const response = await axios.post(formSubmitUrl,
-                qs.stringify({
-                    user_id: user_id,
-                    service_id: form_service_id,
-                    service_code: form_service_code,
-                    sub_service_id: form_sub_service_id,
-                    name: name,
-                    father_name: fatherName,
-                    date_of_birth: dateOfBirth,
-                    mobile: mobileNo,
-
-                }),
-                {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
+            try {
+                console.log("Submitting Data:", { user_id, form_service_id, form_service_code, form_sub_service_id, name, fatherName, dateOfBirth, mobileNo });
+    
+                const response = await axios.post(formSubmitUrl,
+                    qs.stringify({
+                        user_id: user_id,
+                        service_id: form_service_id,
+                        service_code: form_service_code,
+                        sub_service_id: form_sub_service_id,
+                        name: name,
+                        father_name: fatherName,
+                        date_of_birth: dateOfBirth,
+                        mobile: mobileNo,
+                    }),
+                    {
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    }
+                );
+    
+                console.log("API Response:", response.data);
+    
+                if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
+                    setModalMessage(response.data.message);
+                    setModalTxnId(response.data.data.txn_id);
+                    setIsSuccessModalVisible(true);
+    
+                    // 1 সেকেন্ড পর মডাল বন্ধ করে নেভিগেট করানো হবে
+                    setTimeout(() => {
+                        setIsSuccessModalVisible(false);
+                        navigation.navigate('ImagePicker', {
+                            "form_id": response.data.form_id,
+                            "txn_id": response.data.data.txn_id,
+                            "service_data": service_data
+                        });
+                    }, 2000);
+                    
+                    setformResponse(response.data.data);
+                    setPanType('');
+                    setName('');
+                    setDob('');
+                    setSelectedDate(new Date());
+                    setFatherName('');
+                    setMobileNo('');
+                } else {
+                    setModalMessage("Something went wrong. Please try again.");
+                    setModalTxnId('');
+                    setIsSuccessModalVisible(true);
                 }
-            );
-
-            if (response.data.status === 'success') {
-                setformResponse(response.data.data);
-                showSuccessToast(response.data.data.txn_id);
-                setPanType('');
-                setName('');
-                setDD('');
-                setMM('');
-                setYYYY('');
-                setDob('');
-                setShowPicker(false);
-                setSelectedDate(new Date());
-                setFatherName('');
-                setMobileNo('');
-
-                navigation.navigate('ImagePicker', {
-                    "form_id": response.data.form_id,
-                    "txn_id": response.data.data.txn_id,
-                    "service_data": service_data
-                });
-
-
-            } else {
-                showErrorToast();
+            } catch (error) {
+                console.error("Error submitting form:", error);
+                setModalMessage("Error: Unable to submit form.");
+                setModalTxnId('');
+                setIsSuccessModalVisible(true);
             }
-            // console.log(response.data.status === 'success');
         } else {
-            Alert.alert("Enter all field");
-
+            Alert.alert("Enter all fields");
         }
-
-
-
-
     };
-
+    
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0} // Adjust offset if needed
-        >
-            <ScrollView contentContainerStyle={styles.container}>
-                <Text style={styles.label}>{cardtype} Type <Text style={{ color: 'red' }}>*</Text></Text>
-                <View style={styles.input_view}>
-                    <View style={styles.svg_box}>
-
-                        <SvgXml xml={serviceSVG} />
-                    </View>
-                    <Text style={[styles.input, { fontSize: 24, fontWeight: 'bold', fontFamily: 'BAUHS93', height: 'auto' }]}>{label}</Text>
-
-                </View>
-                <Toast />
-
-
-                <Text style={styles.label}>Name <Text style={{ color: 'red' }}>*</Text></Text>
-                <View style={styles.input_view}>
-                    <View style={styles.svg_box}>
-
-                        <SvgXml xml={nameSVG} />
-                    </View>
-                    <TextInput
-                        style={styles.input}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="Enter Name"
-                        placeholderTextColor="black"
-
-                    />
-                </View>
-
-                <Text style={styles.label}>DOB (DD/MM/YYYY) <Text style={{ color: 'red' }}>*</Text></Text>
-                <View style={styles.input_view}>
-                    <View style={styles.svg_box}>
-
-                        <SvgXml xml={DOBSVG} />
-                    </View>
-                    <TouchableOpacity onPress={() => setShowPicker(true)} style={{ flex: 1 }}>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <View style={styles.card}>
+                    <Text style={styles.title}>{label}</Text>
+                    
+                    <Text style={styles.label}>Name <Text style={{ color: 'red' }}>*</Text></Text>
+                    <View style={styles.inputContainer}>
+                        <SvgXml xml={nameSVG} style={styles.icon} />
                         <TextInput
-                            style={[styles.input, { width: '100%' }]}
-                            value={dob}
-                            placeholder="Select Date of Birth"
-                            placeholderTextColor="black"
-                            editable={false}
+                            style={styles.input}
+                            value={name}
+                            onChangeText={setName}
+                            placeholder="Enter Name"
+                            placeholderTextColor="#666"
                         />
-                    </TouchableOpacity>
+                    </View>
+                    
+                    <Text style={styles.label}>DOB (DD/MM/YYYY) <Text style={{ color: 'red' }}>*</Text></Text>
+                    <View style={styles.inputContainer}>
+                        <SvgXml xml={DOBSVG} style={styles.icon} />
+
+                        {/* ম্যানুয়ালি টাইপের জন্য TextInput */}
+                        <TextInput
+                            style={styles.input}
+                            value={dob}
+                            onChangeText={(text) => {
+                                // শুধুমাত্র সংখ্যা ছাড়া কিছু লিখতে দেবে না
+                                let cleanedText = text.replace(/\D/g, '');
+
+                                // Auto `/` বসানোর জন্য ফরম্যাটিং
+                                if (cleanedText.length > 2 && cleanedText.length <= 4) {
+                                    cleanedText = cleanedText.slice(0, 2) + '/' + cleanedText.slice(2);
+                                } else if (cleanedText.length > 4) {
+                                    cleanedText = cleanedText.slice(0, 2) + '/' + cleanedText.slice(2, 4) + '/' + cleanedText.slice(4, 8);
+                                }
+
+                                setDob(cleanedText);
+                            }}
+                            placeholder="DD/MM/YYYY"
+                            placeholderTextColor="#666"
+                            keyboardType="numeric"
+                            maxLength={10} // 10 ক্যারেক্টারের বেশি হতে দেবে না (DD/MM/YYYY)
+                        />
+
+                        {/* ক্যালেন্ডার খুলতে বাটন */}
+                        <TouchableOpacity onPress={() => setShowPicker(true)} style={{ padding: 10 }}>
+                        <SvgXml xml={DOBSVG} style={styles.icon} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* ক্যালেন্ডার ওপেন হলে */}
                     {showPicker && (
                         <DateTimePicker
                             value={selectedDate}
                             mode="date"
-                            display="spinner" // Use "spinner" for better UX on mobile
+                            display="calendar"
                             maximumDate={new Date()}
-minimumDate={new Date(1900, 0, 1)}
-                            onChange={handleDateChange}
+                            minimumDate={new Date(1900, 0, 1)}
+                            onChange={(event, selectedDate) => {
+                                setShowPicker(false);
+                                if (selectedDate) {
+                                    const formattedDate = selectedDate.toLocaleDateString('en-GB'); // DD/MM/YYYY ফরম্যাট
+                                    setDob(formattedDate);
+                                    setSelectedDate(selectedDate);
+                                }
+                            }}
                         />
                     )}
 
-                </View>
 
-                <Text style={styles.label}>Father's Name <Text style={{ color: 'red' }}>*</Text></Text>
-                <View style={styles.input_view}>
-                    <View style={styles.svg_box}>
-
-                        <SvgXml xml={fatherNameSVG} />
+                    
+                    <Text style={styles.label}>Father's Name <Text style={{ color: 'red' }}>*</Text></Text>
+                    <View style={styles.inputContainer}>
+                        <SvgXml xml={fatherNameSVG} style={styles.icon} />
+                        <TextInput
+                            style={styles.input}
+                            value={fatherName}
+                            onChangeText={setFatherName}
+                            placeholder="Enter Father's Name"
+                            placeholderTextColor="#666"
+                        />
                     </View>
-                    <TextInput
-                        style={styles.input}
-                        value={fatherName}
-                        onChangeText={setFatherName}
-                        placeholder="Enter Father's Name"
-                        placeholderTextColor="black"
-                    />
-                </View>
-
-                <Text style={styles.label}>Mobile no <Text style={{ color: 'red' }}>*</Text></Text>
-                <View style={styles.input_view}>
-                    <View style={styles.svg_box}>
-
-                        <SvgXml xml={MobileSVG} />
+                    
+                    <Text style={styles.label}>Mobile No <Text style={{ color: 'red' }}>*</Text></Text>
+                    <View style={styles.inputContainer}>
+                        <SvgXml xml={MobileSVG} style={styles.icon} />
+                        <TextInput
+                            style={styles.input}
+                            value={mobileNo}
+                            onChangeText={setMobileNo}
+                            placeholder="Enter Mobile Number"
+                            placeholderTextColor="#666"
+                            maxLength={10}
+                            keyboardType="numeric"
+                        />
                     </View>
-                    <TextInput
-                        style={styles.input}
-                        value={mobileNo}
-                        onChangeText={setMobileNo}
-                        placeholder="Enter Mobile Number"
-                        placeholderTextColor="black"
-                        maxLength={10}
-                        keyboardType="numeric"
-                    />
+                    
+                    <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+                        <Text style={styles.buttonText}>Submit</Text>
+                    </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                    <Text style={styles.buttonText}>Submit</Text>
-                </TouchableOpacity>
+                <Toast />
             </ScrollView>
+            <Modal visible={isSuccessModalVisible} animationType="fade" transparent={true}>
+                <View style={styles.modalOverlay}>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                    <Image source={require('../../assets/success.gif')} style={styles.successGif} />
+                    <Text style={styles.modalMessage}>{modalMessage}</Text>
+                    {modalTxnId ? <Text style={styles.modalTransactionId}>Txn ID: {modalTxnId} </Text>: null }
+
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        //activeOpacity={1} 
+                        onPress={() => {
+                        setIsSuccessModalVisible(false);
+                        }}
+                    >
+                        <Text style={styles.closeButtonText}>OK</Text>
+                    </TouchableOpacity>
+                    </View>
+                </View>
+                </View>
+            </Modal>
+
         </KeyboardAvoidingView>
     );
 }
@@ -244,58 +261,137 @@ export default Type1
 
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
-        padding: 20,
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    scrollContainer: {
+        padding: 10,
+    },
+    card: {
+        padding: 10,
+        borderRadius: 10,
         backgroundColor: '#fff',
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 2 },
+    },
+    title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 15,
+        color:'#FFCB0A',
     },
     label: {
-        color: 'black',
         fontSize: 16,
-        marginBottom: 8,
         fontWeight: 'bold',
-        marginBottom: 15,
-
+        color: '#009743',
+        marginBottom: 5,
     },
-    input_view: {
-        borderColor: '#ccc',
-        borderWidth: 2,
-        borderRadius: 10,
-        // alignItems: 'center',
+    inputContainer: {
         flexDirection: 'row',
-        marginBottom: 15,
-    },
-    svg_box: {
-        borderColor: '#ccc',
-        borderWidth: 2,
-        borderRadius: 5,
-        backgroundColor: '#d2d2d2',
-        justifyContent: 'center',
-        alignItems: 'center'
-
-    },
-
-    input: {
-        height: 40,
-        width: '80%',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        fontSize: 18,
+        borderWidth: 1,
+        borderColor: '#FFCB0A',
+        borderRadius: 10,
+        padding: 5,
+        marginBottom: 10,
+        backgroundColor: '#fff',
+    },
+    icon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        fontSize: 16,
         color: 'black',
-        fontFamily: 'BAUHS93',
+    },
+    dateInput: {
+        flex: 1,
+        paddingVertical: 10,
+    },
+    dropdown: {
+        borderWidth: 1,
         borderColor: '#ccc',
-        // backgroundColor:'red'
+        borderRadius: 8,
+        padding: 10,
+        backgroundColor: '#fff',
+        marginBottom: 10,
+    },
+    dropdownList: {
+        maxHeight: 150,
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+    },
+    dropdownItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+    },
+    dropdownText: {
+        fontSize: 16,
     },
     button: {
         backgroundColor: '#FFCB0A',
-        paddingVertical: 10,
-        borderRadius: 5,
+        paddingVertical: 12,
+        borderRadius: 8,
         alignItems: 'center',
-        marginTop: 10,
-
     },
     buttonText: {
         color: '#fff',
-        fontSize: 20,
-        fontWeight: 'bold'
+        fontSize: 18,
+        fontWeight: 'bold',
     },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+      },
+      modalContainer: {
+        width: '80%',
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+        elevation: 5,
+      },
+      successGif: {
+        width: 90,
+        height: 90,
+        marginBottom: 12,
+        alignSelf: 'center', // Fix for centering
+      },
+      modalMessage: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        color: '#333',
+        marginBottom: 8,
+      },
+      modalTransactionId: {
+        fontSize: 14,
+        textAlign: 'center',
+        color: '#666',
+        marginBottom: 12,
+      },
+      closeButton: {
+        backgroundColor: '#007BFF',
+        paddingVertical: 10,
+        paddingHorizontal: 30,
+        borderRadius: 8,
+        alignSelf: 'center', // Fix for centering
+        width: '100%', // Full width to maintain centering
+        alignItems: 'center',
+      },
+      closeButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        textAlign: 'center',
+      },
+
 });

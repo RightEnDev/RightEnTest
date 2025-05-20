@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View, ActivityIndicator,FlatList,Dimensions ,Image} from 'react-native'
-import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, ActivityIndicator,FlatList,Dimensions ,Image, TouchableOpacity, Animated} from 'react-native'
+import React, { useState, useEffect,useRef } from 'react';
 import axios from 'axios';
 const { width } = Dimensions.get('window');
 import { BackHandler } from 'react-native';
@@ -14,6 +14,9 @@ const DetailsScreen = ({ route ,navigation}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -87,72 +90,54 @@ const DetailsScreen = ({ route ,navigation}) => {
     );
   }
   const renderItem = ({ item }) => {
-    // console.log(item);
-    // console.log("----------------------------");
-    return(
-    <View 
-    onStartShouldSetResponder={() => true}
-          onResponderGrant={() => {
-            // console.log(item.service_code);
-            navigation.navigate('ServiceForm', { 
-              "service_code": service_code, 
-              "service_data": item, 
-              "app_icon":app_icon
-            });
-            
-
-          }}>
-      <View style={styles.CardContainer}>
-          <View style={styles.image_container}>
-
+    return (
+      <TouchableOpacity 
+        onPress={() => navigation.navigate('ServiceForm', { 
+          "service_code": service_code, 
+          "service_data": item, 
+          "app_icon": app_icon 
+        })}
+      >
+        <Animated.View style={[styles.cardContainer, { transform: [{ scale: scaleAnim }] }]}>
+          
+          {/* Left Side - Icon */}
+          <View style={styles.imageContainer}>
             <Image
-            source={{ uri: `https://righten.in/public/admin/assets/img/service_icon/${app_icon}` }}
-            style={styles.panCardImage}
-              resizeMode='cover'
+              source={{ uri: `https://righten.in/public/admin/assets/img/service_icon/${app_icon}` }}
+              style={styles.image}
+              resizeMode="cover"
+              onError={(e) => console.log("Image Load Error:", e.nativeEvent.error)}
             />
           </View>
-          <View style={styles.service_option_text_view}>
-            <Text style={styles.service_option_text}>{item.name}</Text>
-
+  
+          {/* Middle - Service Name */}
+          <View style={styles.textContainer}>
+            <Text style={styles.serviceName}>{item.name}</Text>
           </View>
-          <View style={styles.service_option_price_view}>
-
-            <Text style={styles.service_option_price}>₹{item.offer_price}</Text>
-          </View>
-
-        </View>
-      
-    </View>)
-  }
+  
+          {/* Right Side - Price */}
+          <Text style={styles.servicePrice}>₹{item.offer_price}</Text>
+  
+        </Animated.View>
+      </TouchableOpacity>
+    );
+  };
+  
+  
+  
 
   return (
     <View  style={styles.container}>
-      {/* <Text style={{ color: 'black' }}>DetailsScreen</Text> */}
-      <View style={{
-        marginLeft: 14,
-        marginRight: 14,
-      }}>
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: `https://righten.in/public/app/assets/img/service_banner/${service_code}_banner.png` }}
-            style={styles.imagebanner}
-            resizeMode='stretch'
-          />
-                    {/* https://righten.in/api/users/services/banner?service_code=REPAN */}
 
-        </View>
       <FlatList
         data={data}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
-        numColumns={3}
-        ListEmptyComponent={<Text style={{fontSize:24,color:'red'}}>No data available</Text>}
-        showsVerticalScrollIndicator={false}
-        columnWrapperStyle={styles.service_row}
+        numColumns={1} // 3 cards per row
+        contentContainerStyle={styles.gridContainer}
       />
-      </View>
-
     </View>
+
   )
 }
 
@@ -161,96 +146,61 @@ export default DetailsScreen;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    // backgroundColor:'red'
+    backgroundColor: "#fff",
+    padding: 10,
   },
-  imageContainer: {
-    marginTop: 15,
-    marginBottom: 15,
-    // backgroundColor:'red'
-  },
-  imagebanner: {
-    width: '100%',
-    height: 'undefined',
-    aspectRatio: 1.7,
-    borderWidth: 5,
-    borderColor: 'gray',
-    borderRadius: 15,
-  },
-  image_container: {
-    width: (width / 3) - 28,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
 
+  gridContainer: {
+    paddingBottom: 10,
   },
-  CardContainer: {
-    marginLeft:5,
-    marginRight:5,
-    marginTop:10,
-    alignItems: 'center',
-  },
-  panCardImage: {
-    width: 'auto',
-    height: undefined,
-    aspectRatio: 1,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderColor: 'black'
 
-  },
-  service_row: {
-    width: "100%",
-    justifyContent: 'center',
+  cardContainer: {
+    flexDirection: "row", // ✅ Horizontal layout
     alignItems: "center",
-    flex: 1,
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
+    marginVertical: 3,
+    padding: 10,
+    margin:1,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
+  },
 
+  imageContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: "hidden",
+    marginRight: 10, // ✅ Space between icon and text
   },
-  service_option_text_view: {
-    width: (width / 3) - 28,
-    borderTopWidth: 2,
-    borderTopColor: '#009743',
-    height: 55,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: 'black'
+
+  image: {
+    width: "100%",
+    height: "100%",
   },
-  service_option_text: {
-    textAlign: 'center',
-    fontFamily: 'BAUHS93',
-    // fontSize: 20,
-    fontWeight: 'bold',
-    paddingBottom:5,
-    paddingTop:5,
-    paddingLeft:3,
-    paddingRight:3,
-    color:'black'
+
+  textContainer: {
+    flex: 1, // ✅ Takes available space in the center
   },
-  service_option_price: {
-    textAlign: 'center',
-    fontFamily: 'BAUHS93',
+
+  serviceName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+
+  servicePrice: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: 'black'
+    color: "#f57c00",
+    fontWeight: "bold",
+    textAlign: "right", // ✅ Align price to the right
+    minWidth: 60, // ✅ Ensure it doesn't shrink
   },
-  service_option_price_view: {
-    width: (width / 3) - 28,
-    borderTopWidth: 2,
-    borderColor: '#000000',
-    height: 45,
-    borderWidth: 3,
-    borderColor: '#009743',
-    backgroundColor: '#FFCB0A',
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
-    justifyContent:'center',
-    alignItems:'center'
-  }
 });
+
+

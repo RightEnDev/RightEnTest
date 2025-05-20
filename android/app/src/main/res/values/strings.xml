@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">RightEn Retailer</string>
+    <color name="notification_color">#FF0000</color>
 </resources>

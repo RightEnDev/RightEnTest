@@ -298,7 +298,7 @@ const History = ({ navigation }) => {
             style={styles.showButton}
             onPress={() => navigation.navigate('ShowDetails', { item: item })}
           >
-            <Text style={styles.showButtonText}>Details</Text>
+            <Text style={styles.showButtonText}> View Service Details</Text>
           </TouchableOpacity>
         </View>
       </View>

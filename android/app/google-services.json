@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "71555513516",
+    "project_id": "righten-retailer",
+    "storage_bucket": "righten-retailer.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:71555513516:android:651593e62e886844e2b309",
+        "android_client_info": {
+          "package_name": "com.righten"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCNzw80FbZKi976cnlr2Zoc0dFGia1Gj0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

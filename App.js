@@ -1,5 +1,5 @@
 import { StyleSheet, StatusBar, Text, Image, View, Dimensions, SafeAreaView } from 'react-native'
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import AppNav from './src/navigation/AppNav'
 import PayUBizSdk from 'payu-non-seam-less-react'
 import axios from 'axios'
@@ -13,6 +13,7 @@ const App = () => {
 
   const shouldLoad = load
   // console.log(shouldLoad);
+
 
   return (
     <View style={{ flex: 1 }}>

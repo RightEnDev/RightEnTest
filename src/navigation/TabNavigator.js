@@ -13,7 +13,7 @@ import Settings from '../screen/Settings';
 import ServiceForm from '../screen/ServiceForm';
 const screenWidth = Dimensions.get('window').width;
 import { SvgXml } from 'react-native-svg';
-import { mobile_svg, profileSVG, historySVG, settingsSVG, price_chartSVG, reportSVG, eye, eyeoff } from '../../assets/ALLSVG';
+import { mobile_svg, profileSVG, historySVG, settingsSVG, calliconSVG, price_chartSVG, reportSVG, CurveSvg, eye, eyeoff } from '../../assets/ALLSVG';
 import Type1 from '../ServiceForm/Type1';
 import ImagePicker from '../screen/ImagePicker';
 import paymentPage from '../screen/PaymentPage';
@@ -22,14 +22,22 @@ import ShowDetails from '../screen/ShowDetails';
 import PrivacyPolicy from '../screen/PrivacyPolicy';
 import RefundPolicy from '../screen/RefundPolicy';
 import TermsAndConditions from '../screen/TermsAndConditions';
+import { Linking } from 'react-native';
+import { StyleSheet } from 'react-native';
+//import Type8 from '../ServiceForm/Type8';
 
 
 const Tab = createBottomTabNavigator();
 
+const helplineNumber = "+91 8250883776";
+const handleCallPress = () => {
+  Linking.openURL(`tel:${helplineNumber}`);
+};
+
 function TabNavigator() {
   function MyTabBar({ state, descriptors, navigation }) {
     return (
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',paddingLeft:5, backgroundColor: '#CFF7FF',width:'160%' }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',paddingLeft:5, backgroundColor: '#CFF7FF',width:'155%' }}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const label =
@@ -144,7 +152,7 @@ function TabNavigator() {
                         source={icon}
                         style={{
                           width: route.name === 'main' ? 60 : 40,
-                          height: route.name === 'main' ? 60 : 40,
+                          height: route.name === 'main' ? 60 : 40, 
                           // borderRadius: 30
                         }}
                       />
@@ -172,7 +180,7 @@ function TabNavigator() {
                 onPress={onPress}
                 onLongPress={onLongPress}
                 style={{
-                  flex: 1, justifyContent: 'center', alignItems: "center",
+                  flex: 1, justifyContent: 'center',  alignItems: "center",
                 }}
                 key={index}
               >
@@ -193,19 +201,34 @@ function TabNavigator() {
       </View>
     );
   }
+
+
   return (
     <Tab.Navigator tabBar={props => <MyTabBar {...props} />} initialRouteName="main">
       <Tab.Screen name="Example1_1" component={Profile}
         options={{
           headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
           headerTintColor: '#fff', // Customize header text color
-          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
-              style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
             />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
           ),
         }}
       />
@@ -214,13 +237,26 @@ function TabNavigator() {
         options={{
           headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
           headerTintColor: '#fff', // Customize header text color
-          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
-              style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
             />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
           ),
         }}
       />
@@ -232,9 +268,22 @@ function TabNavigator() {
           headerTitleStyle: { color: 'black', fontSize: 20 },
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
-              style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
             />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
           ),
         }}
       />
@@ -242,13 +291,26 @@ function TabNavigator() {
         options={{
           headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
           headerTintColor: '#fff', // Customize header text color
-          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
-              style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
             />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
           ),
         }}
       />
@@ -256,14 +318,27 @@ function TabNavigator() {
       <Tab.Screen name="Example2_2" component={Settings}
         options={{
           headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
-          headerTintColor: '#fff',
-          headerTitleStyle: { color: 'black', fontSize: 20 },
+          headerTintColor: '#fff', // Customize header text color
           headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
-              style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
             />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
           ),
         }}
       />
@@ -272,16 +347,28 @@ function TabNavigator() {
         name="TermsAndConditions"
         component={TermsAndConditions}
         options={{
-          tabBarButton: () => null,
           headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
           headerTintColor: '#fff', // Customize header text color
-          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
-              style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
             />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
           ),
         }}
       />
@@ -291,24 +378,96 @@ function TabNavigator() {
         name="RefundPolicy"
         component={RefundPolicy}
         options={{
-          tabBarButton: () => null,
           headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
           headerTintColor: '#fff', // Customize header text color
-          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
-              style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
             />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
           ),
         }}
       />
 
 
-<Tab.Screen
+    <Tab.Screen
         name="PrivacyPolicy"
         component={PrivacyPolicy}
+        options={{
+          headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
+          headerTintColor: '#fff', // Customize header text color
+          headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
+          headerLeft: () => (
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
+            />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
+          ),
+        }}
+      />
+
+      <Tab.Screen
+        name="Details"
+        component={DetailsScreen}
+        options={{
+          headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
+          headerTintColor: '#fff', // Customize header text color
+          headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
+          headerLeft: () => (
+            <Image
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
+            />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
+          ),
+        }}
+      />
+
+{/* <Tab.Screen
+        name="Type8"
+        component={Type8}
         options={{
           tabBarButton: () => null,
           headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
@@ -317,17 +476,15 @@ function TabNavigator() {
           headerTitle: '',
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
+              source={require('../../assets/images/logo.png')}
               style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
             />
           ),
         }}
-      />
+      /> */}
 
 
-
-
-      <Tab.Screen
+      {/* <Tab.Screen
         name="Details"
         component={DetailsScreen}
         options={{
@@ -335,7 +492,7 @@ function TabNavigator() {
           headerTitle: '',
           headerShown: false
         }}
-      />
+      /> */}
       <Tab.Screen
         name="ServiceForm"
         component={ServiceForm}
@@ -366,16 +523,28 @@ function TabNavigator() {
         name="ShowDetails"
         component={ShowDetails}
         options={{
-          tabBarButton: () => null,
           headerStyle: { backgroundColor: '#CFF7FF' }, // Customize header color for this tab
           headerTintColor: '#fff', // Customize header text color
-          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerTitle: '',
+          headerTitleStyle: { color: 'black', fontSize: 20 },
           headerLeft: () => (
             <Image
-              source={require('../../assets/images/vertical_righten_without_logo.png')}
-              style={{ width: 150, height: 30, marginRight: 'auto', marginLeft: (screenWidth / 2) - 75 }}
+              source={require('../../assets/images/logo.png')}
+              style={{ width: 50, height: 50, marginRight: 'auto', marginLeft: (screenWidth / 4.5) - 75 }}
             />
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* TouchableOpacity for Helpline Number */}
+              <TouchableOpacity style={styles.noticeBanner} onPress={handleCallPress} activeOpacity={0.7}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <SvgXml xml={calliconSVG} width={20} height={20} style={{ marginRight: 5 }} />
+                  <Text style={styles.helptext}>Helpline : </Text> 
+                  <Text style={styles.noticeText}>{helplineNumber}</Text>
+                </View>
+              </TouchableOpacity>
+
+            </View>
           ),
         }}
       />
@@ -397,3 +566,85 @@ function TabNavigator() {
   );
 }
 export default TabNavigator;
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    alignItems: 'center',
+    zIndex: 1, // Ensure tab bar is above the curve
+  },
+  curve: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: -1, // Push curve behind
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    width: '100%',
+    paddingBottom: 20,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  icon: {
+    width: 30,
+    height: 30,
+  },
+  label: {
+    color: '#000',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  centerButtonContainer: {
+    position: 'absolute',
+    bottom: 15,
+    left: '42%',
+  },
+  centerButton: {
+    width: 70,
+    height: 70,
+    backgroundColor: '#FFCB0A',
+    borderRadius: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+  },
+  centerIcon: {
+    width: 50,
+    height: 50,
+  },
+  noticeBanner: {
+    marginRight:20,
+    padding: 10,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent:'center',
+  },
+  helptext: {
+    fontSize: 18, // Slightly larger for better visibility
+    fontWeight: '600', // Semi-bold for elegance
+    color: '#263238', // Dark charcoal for a premium feel
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)', 
+    textShadowOffset: { width: 1, height: 2 },
+    textShadowRadius: 4,
+    textTransform: 'uppercase',
+  },
+  noticeText: {
+    fontSize: 20, // Slightly bigger for emphasis
+    fontWeight: '800', // Extra bold for strong visibility
+    color: '#FF3D00', // Bright red-orange for urgency
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    textShadowColor: 'rgba(255, 61, 0, 0.5)', // Glow effect
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
+  },
+});
