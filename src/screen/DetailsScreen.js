@@ -11,6 +11,7 @@ const DetailsScreen = ({ route ,navigation}) => {
 
   const { service_code,app_icon } = route.params;
   // console.log(service_code);
+  // console.log(app_icon);
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

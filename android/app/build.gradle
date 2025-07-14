@@ -18,8 +18,8 @@ android {
         applicationId "com.righten"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 9
-        versionName "1.0.3"
+        versionCode 11
+        versionName "1.0.5"
 
         buildConfigField "String", "PHONEPE_API_KEY", "\"7a9c42b8-a73c-45f6-8d4f-13728d0e1966\""
         buildConfigField "String", "PAYU_API_KEY", "\"3VBj9QFB59MzeKIXI11itF4zwTxVlA5Z\""

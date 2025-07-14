@@ -1,263 +1,251 @@
-import { StyleSheet, Text, Modal, View, TextInput, Image, Button, TouchableOpacity, BackHandler, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
-import React, { useState, useEffect, useCallback } from 'react';
+import {
+  StyleSheet, Text, Modal, View, TextInput, Image,
+  TouchableOpacity, BackHandler, Dimensions, KeyboardAvoidingView,
+  Platform, ScrollView
+} from 'react-native';
+import React, { useState, useCallback } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import qs from 'qs';
-const { width } = Dimensions.get('window');
 import { SvgXml } from 'react-native-svg';
-import { mobile_svg, settingsSVG, profileSVG, reportSVG, eye, eyeoff, nameSVG, DOBSVG, datepicker, fatherNameSVG, MobileSVG, serviceSVG } from '../../assets/ALLSVG';
 import Toast from 'react-native-toast-message';
 
-const Type1 = ({ service_data, label, cardtype, form_service_code, form_sub_service_id, form_service_id, formSubmitUrl, navigation }) => {
-    // console.log("hello");
-    // console.log(form_service_code,form_sub_service_id,form_service_id);
-    const [formResponse, setformResponse] = useState([]);
+import {
+  nameSVG, DOBSVG, fatherNameSVG, MobileSVG
+} from '../../assets/ALLSVG';
 
-    const [panType, setPanType] = useState('');
-    const [name, setName] = useState('');
+const { width } = Dimensions.get('window');
 
-    const [DD, setDD] = useState('');
-    const [MM, setMM] = useState('');
-    const [YYYY, setYYYY] = useState('');
-    const [dob, setDob] = useState('');
-    const [showPicker, setShowPicker] = useState(false);
-    const [selectedDate, setSelectedDate] = useState(new Date());
-    const [fatherName, setFatherName] = useState('');
-    const [mobileNo, setMobileNo] = useState('');
-    // Modal state gula
-    const [modalMessage, setModalMessage] = useState('');
-    const [modalTxnId, setModalTxnId] = useState('');
-    const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+const Type1 = ({ service_data, label, form_service_code, form_sub_service_id, form_service_id, formSubmitUrl, navigation }) => {
+  const [name, setName] = useState('');
+  const [dob, setDob] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(false);
+  const [fatherName, setFatherName] = useState('');
+  const [mobileNo, setMobileNo] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalTxnId, setModalTxnId] = useState('');
+  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
 
-    useFocusEffect(
-        React.useCallback(() => {
-            const onBackPress = () => {
-                navigation.navigate('main');
-                return true;
-            };
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        navigation.navigate('main');
+        return true;
+      };
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation])
+  );
 
-            BackHandler.addEventListener('hardwareBackPress', onBackPress);
+  const validateForm = () => {
+    const nameRegex = /^[A-Za-z ]+$/;
+    const mobileRegex = /^[0-9]{10}$/;
 
-            return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-        }, [navigation])
-    );
+    if (!name.trim() || !nameRegex.test(name)) {
+      Toast.show({ type: 'error', text1: 'Name must contain only letters' });
+      return false;
+    }
+    if (!dob) {
+      Toast.show({ type: 'error', text1: 'Please select your date of birth' });
+      return false;
+    }
+    if (!fatherName.trim() || !nameRegex.test(fatherName)) {
+      Toast.show({ type: 'error', text1: "Father's Name must contain only letters" });
+      return false;
+    }
+    if (!mobileRegex.test(mobileNo)) {
+      Toast.show({ type: 'error', text1: 'Mobile number must be 10 digits' });
+      return false;
+    }
+    return true;
+  };
 
-    const handleDateChange = (event, date) => {
-        setShowPicker(false);
-        if (date) {
-            const formattedDate = date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
-            setDob(formattedDate);
-            console.log(formattedDate);
-            setSelectedDate(date);
-        }
-    };
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
-    const handleSubmit = async () => {
-        const user_id = await AsyncStorage.getItem('us_id');
-        const dateOfBirth = dob;
-    
-        if (
-            user_id &&
-            form_service_id &&
-            form_service_code &&
-            form_sub_service_id &&
-            name &&
-            fatherName &&
-            dateOfBirth &&
-            mobileNo && mobileNo.length === 10
-        ) {
-            try {
-                console.log("Submitting Data:", { user_id, form_service_id, form_service_code, form_sub_service_id, name, fatherName, dateOfBirth, mobileNo });
-    
-                const response = await axios.post(formSubmitUrl,
-                    qs.stringify({
-                        user_id: user_id,
-                        service_id: form_service_id,
-                        service_code: form_service_code,
-                        sub_service_id: form_sub_service_id,
-                        name: name,
-                        father_name: fatherName,
-                        date_of_birth: dateOfBirth,
-                        mobile: mobileNo,
-                    }),
-                    {
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    }
-                );
-    
-                console.log("API Response:", response.data);
-    
-                if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
-                    setModalMessage(response.data.message);
-                    setModalTxnId(response.data.data.txn_id);
-                    setIsSuccessModalVisible(true);
-    
-                    // 1 সেকেন্ড পর মডাল বন্ধ করে নেভিগেট করানো হবে
-                    setTimeout(() => {
-                        setIsSuccessModalVisible(false);
-                        navigation.navigate('ImagePicker', {
-                            "form_id": response.data.form_id,
-                            "txn_id": response.data.data.txn_id,
-                            "service_data": service_data
-                        });
-                    }, 2000);
-                    
-                    setformResponse(response.data.data);
-                    setPanType('');
-                    setName('');
-                    setDob('');
-                    setSelectedDate(new Date());
-                    setFatherName('');
-                    setMobileNo('');
-                } else {
-                    setModalMessage("Something went wrong. Please try again.");
-                    setModalTxnId('');
-                    setIsSuccessModalVisible(true);
+    try {
+      const user_id = await AsyncStorage.getItem('us_id');
+      if (!user_id) {
+        Toast.show({ type: 'error', text1: 'User ID not found in storage' });
+        return;
+      }
+
+      const payload = {
+        user_id,
+        service_id: form_service_id,
+        service_code: form_service_code,
+        sub_service_id: form_sub_service_id,
+        name,
+        father_name: fatherName,
+        date_of_birth: dob,
+        mobile: mobileNo,
+      };
+
+      const response = await axios.post(formSubmitUrl, qs.stringify(payload), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+
+      const res = response.data;
+      if (res.status === 'success' && res.form_id && res.data?.txn_id) {
+        setModalMessage(res.message);
+        setModalTxnId(res.data.data.txn_id);
+        setIsSuccessModalVisible(true);
+
+        setTimeout(() => {
+          setIsSuccessModalVisible(false);
+          navigation.navigate('ImagePicker', {
+            form_id: res.form_id,
+            txn_id: res.data.data.txn_id,
+            service_data,
+          });
+        }, 2000);
+
+        setName('');
+        setDob('');
+        setFatherName('');
+        setMobileNo('');
+        setSelectedDate(new Date());
+      } else {
+        Toast.show({ type: 'error', text1: 'Submission failed, try again.' });
+      }
+
+    } catch (error) {
+      console.error('Form submission error:', error);
+      Toast.show({ type: 'error', text1: 'Something went wrong!' });
+    }
+  };
+
+  const handleDateChange = (event, selected) => {
+    setShowPicker(false);
+    if (selected) {
+      const formattedDate = selected.toLocaleDateString('en-GB'); // DD/MM/YYYY
+      setDob(formattedDate);
+      setSelectedDate(selected);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.card}>
+          <Text style={styles.title}>{label}</Text>
+
+          {/* Name */}
+          <Text style={styles.label}>Name *</Text>
+          <View style={styles.inputContainer}>
+            <SvgXml xml={nameSVG} style={styles.icon} />
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={(text) => {
+                const cleaned = text.replace(/[^A-Za-z ]/g, '');
+                setName(cleaned.toUpperCase());
+                }}
+              placeholder="Enter Name"
+              placeholderTextColor="#666"
+            />
+          </View>
+
+          {/* DOB */}
+          <Text style={styles.label}>DOB (DD/MM/YYYY) *</Text>
+          <View style={styles.inputContainer}>
+            <SvgXml xml={DOBSVG} style={styles.icon} />
+            <TextInput
+              style={styles.input}
+              value={dob}
+              onChangeText={(text) => {
+                let cleanedText = text.replace(/\D/g, '');
+                if (cleanedText.length > 2 && cleanedText.length <= 4) {
+                  cleanedText = cleanedText.slice(0, 2) + '/' + cleanedText.slice(2);
+                } else if (cleanedText.length > 4) {
+                  cleanedText = cleanedText.slice(0, 2) + '/' + cleanedText.slice(2, 4) + '/' + cleanedText.slice(4, 8);
                 }
-            } catch (error) {
-                console.error("Error submitting form:", error);
-                setModalMessage("Error: Unable to submit form.");
-                setModalTxnId('');
-                setIsSuccessModalVisible(true);
-            }
-        } else {
-            Alert.alert("Enter all fields");
-        }
-    };
-    
-    return (
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <View style={styles.card}>
-                    <Text style={styles.title}>{label}</Text>
-                    
-                    <Text style={styles.label}>Name <Text style={{ color: 'red' }}>*</Text></Text>
-                    <View style={styles.inputContainer}>
-                        <SvgXml xml={nameSVG} style={styles.icon} />
-                        <TextInput
-                            style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                            placeholder="Enter Name"
-                            placeholderTextColor="#666"
-                        />
-                    </View>
-                    
-                    <Text style={styles.label}>DOB (DD/MM/YYYY) <Text style={{ color: 'red' }}>*</Text></Text>
-                    <View style={styles.inputContainer}>
-                        <SvgXml xml={DOBSVG} style={styles.icon} />
+                setDob(cleanedText);
+              }}
+              placeholder="DD/MM/YYYY"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+            <TouchableOpacity onPress={() => setShowPicker(true)} style={{ padding: 10 }}>
+              <SvgXml xml={DOBSVG} style={styles.icon} />
+            </TouchableOpacity>
+          </View>
 
-                        {/* ম্যানুয়ালি টাইপের জন্য TextInput */}
-                        <TextInput
-                            style={styles.input}
-                            value={dob}
-                            onChangeText={(text) => {
-                                // শুধুমাত্র সংখ্যা ছাড়া কিছু লিখতে দেবে না
-                                let cleanedText = text.replace(/\D/g, '');
+          {showPicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display="calendar"
+              maximumDate={new Date()}
+              minimumDate={new Date(1900, 0, 1)}
+              onChange={handleDateChange}
+            />
+          )}
 
-                                // Auto `/` বসানোর জন্য ফরম্যাটিং
-                                if (cleanedText.length > 2 && cleanedText.length <= 4) {
-                                    cleanedText = cleanedText.slice(0, 2) + '/' + cleanedText.slice(2);
-                                } else if (cleanedText.length > 4) {
-                                    cleanedText = cleanedText.slice(0, 2) + '/' + cleanedText.slice(2, 4) + '/' + cleanedText.slice(4, 8);
-                                }
+          {/* Father's Name */}
+          <Text style={styles.label}>Father's Name *</Text>
+          <View style={styles.inputContainer}>
+            <SvgXml xml={fatherNameSVG} style={styles.icon} />
+            <TextInput
+              style={styles.input}
+              value={fatherName}
+              onChangeText={(text) => {
+                const cleaned = text.replace(/[^A-Za-z ]/g, '');
+                setFatherName(cleaned.toUpperCase());
+                }}
+              placeholder="Enter Father's Name"
+              placeholderTextColor="#666"
+            />
+          </View>
 
-                                setDob(cleanedText);
-                            }}
-                            placeholder="DD/MM/YYYY"
-                            placeholderTextColor="#666"
-                            keyboardType="numeric"
-                            maxLength={10} // 10 ক্যারেক্টারের বেশি হতে দেবে না (DD/MM/YYYY)
-                        />
+          {/* Mobile No */}
+          <Text style={styles.label}>Mobile No *</Text>
+          <View style={styles.inputContainer}>
+            <SvgXml xml={MobileSVG} style={styles.icon} />
+            <TextInput
+              style={styles.input}
+              value={mobileNo}
+              onChangeText={(text) => setMobileNo(text.replace(/[^0-9]/g, ''))}
+              placeholder="Enter Mobile Number"
+              placeholderTextColor="#666"
+              maxLength={10}
+              keyboardType="numeric"
+            />
+          </View>
 
-                        {/* ক্যালেন্ডার খুলতে বাটন */}
-                        <TouchableOpacity onPress={() => setShowPicker(true)} style={{ padding: 10 }}>
-                        <SvgXml xml={DOBSVG} style={styles.icon} />
-                        </TouchableOpacity>
-                    </View>
+          {/* Submit Button */}
+          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+            <Text style={styles.buttonText}>Submit</Text>
+          </TouchableOpacity>
+        </View>
 
-                    {/* ক্যালেন্ডার ওপেন হলে */}
-                    {showPicker && (
-                        <DateTimePicker
-                            value={selectedDate}
-                            mode="date"
-                            display="calendar"
-                            maximumDate={new Date()}
-                            minimumDate={new Date(1900, 0, 1)}
-                            onChange={(event, selectedDate) => {
-                                setShowPicker(false);
-                                if (selectedDate) {
-                                    const formattedDate = selectedDate.toLocaleDateString('en-GB'); // DD/MM/YYYY ফরম্যাট
-                                    setDob(formattedDate);
-                                    setSelectedDate(selectedDate);
-                                }
-                            }}
-                        />
-                    )}
+        <Toast />
+      </ScrollView>
+
+      {/* Modal */}
+      <Modal visible={isSuccessModalVisible} animationType="fade" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Image source={require('../../assets/success.gif')} style={styles.successGif} />
+            <Text style={styles.modalMessage}>{modalMessage}</Text>
+            {modalTxnId ? <Text style={styles.modalTransactionId}>Txn ID: {modalTxnId}</Text> : null}
+            <TouchableOpacity style={styles.closeButton} onPress={() => setIsSuccessModalVisible(false)}>
+              <Text style={styles.closeButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      <Toast />
+    </KeyboardAvoidingView>
+  );
+};
+
+export default Type1;
 
 
-                    
-                    <Text style={styles.label}>Father's Name <Text style={{ color: 'red' }}>*</Text></Text>
-                    <View style={styles.inputContainer}>
-                        <SvgXml xml={fatherNameSVG} style={styles.icon} />
-                        <TextInput
-                            style={styles.input}
-                            value={fatherName}
-                            onChangeText={setFatherName}
-                            placeholder="Enter Father's Name"
-                            placeholderTextColor="#666"
-                        />
-                    </View>
-                    
-                    <Text style={styles.label}>Mobile No <Text style={{ color: 'red' }}>*</Text></Text>
-                    <View style={styles.inputContainer}>
-                        <SvgXml xml={MobileSVG} style={styles.icon} />
-                        <TextInput
-                            style={styles.input}
-                            value={mobileNo}
-                            onChangeText={setMobileNo}
-                            placeholder="Enter Mobile Number"
-                            placeholderTextColor="#666"
-                            maxLength={10}
-                            keyboardType="numeric"
-                        />
-                    </View>
-                    
-                    <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                        <Text style={styles.buttonText}>Submit</Text>
-                    </TouchableOpacity>
-                </View>
-                <Toast />
-            </ScrollView>
-            <Modal visible={isSuccessModalVisible} animationType="fade" transparent={true}>
-                <View style={styles.modalOverlay}>
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                    <Image source={require('../../assets/success.gif')} style={styles.successGif} />
-                    <Text style={styles.modalMessage}>{modalMessage}</Text>
-                    {modalTxnId ? <Text style={styles.modalTransactionId}>Txn ID: {modalTxnId} </Text>: null }
-
-                    <TouchableOpacity
-                        style={styles.closeButton}
-                        //activeOpacity={1} 
-                        onPress={() => {
-                        setIsSuccessModalVisible(false);
-                        }}
-                    >
-                        <Text style={styles.closeButtonText}>OK</Text>
-                    </TouchableOpacity>
-                    </View>
-                </View>
-                </View>
-            </Modal>
-
-        </KeyboardAvoidingView>
-    );
-}
-
-export default Type1
 
 const styles = StyleSheet.create({
     container: {

@@ -9,7 +9,7 @@ const Splash = ({ navigation }) => {
     useEffect(() => {
         setTimeout(async () => {
             const userEmail = await AsyncStorage.getItem('userEmail');
-            const us_id = await AsyncStorage.getItem('us_id');
+            const us_id = await AsyncStorage.getItem('userId');
             if (userEmail && us_id) {
                 navigation.navigate('Home');
             }

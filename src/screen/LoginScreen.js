@@ -1,57 +1,47 @@
-
-
-
-import React, { useState } from 'react';
-import { View, Text, TextInput, ImageBackground, Button, Image, Alert, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, TextInput, ImageBackground, TouchableOpacity, StyleSheet
+} from 'react-native';
 import axios from 'axios';
 import qs from 'qs';
-// const LOGO = require('../../assets/images/logo_png.png');
-const image_background = require('../../assets/images/form_background.png');
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SvgXml } from 'react-native-svg';
 import { mobile_svg, passwordsvg, eye, eyeoff } from '../../assets/ALLSVG';
 import Toast from 'react-native-toast-message';
 import { CommonActions } from '@react-navigation/native';
 
+const image_background = require('../../assets/images/form_background.png');
+
 const LoginScreen = ({ navigation }) => {
   const [Mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [showNotice, setShowNotice] = useState(false);
-  const [notice, setNotice] = useState('')
-  // console.log(notice);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [countdown, setCountdown] = useState(60);
+  const [showResend, setShowResend] = useState(false);
+
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
   };
-  const showSuccessToast = () => {
-    Toast.show({
-      type: 'success',
-      text1: 'Hello 👋',
-      text2: 'You are successfully logged in !',
 
-    });
+  const showToast = (type, text1, text2 = '') => {
+    Toast.show({ type, text1, text2 });
   };
-  const showErrorToast = () => {
-    Toast.show({
-      type: 'error',
-      text1: 'Oops! 😔',
-      text2: 'Something went wrong. Please try again.',
-      // position: 'top', // or 'bottom'
-    });
-  };
-
 
   const validateInput = () => {
-    if (Mobile.length !== 10) {
-      setErrorMessage('Mobile number must be 10 digits.');
+    if (Mobile.trim() === '') {
+      showToast('error', 'Mobile number required');
       return false;
     }
-    if (password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters.');
+    if (password.trim() === '') {
+      showToast('error', 'Password required');
       return false;
     }
-    setErrorMessage('');
+    if (showOtpInput && otp.trim() === '') {
+      showToast('error', 'OTP required');
+      return false;
+    }
     return true;
   };
 
@@ -59,193 +49,207 @@ const LoginScreen = ({ navigation }) => {
     if (!validateInput()) return;
 
     try {
-      const response = await axios.post('https://righten.in/api/users/login',
+      const response = await axios.post(
+        'https://righten.in/api/users/login',
         qs.stringify({
           mobile: Mobile,
-          password
+          password,
+          otp: showOtpInput ? otp : '',
+          app_version: '1.0.5',
         }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
 
-      if (response.data.data.status) {
-        await AsyncStorage.setItem('userEmail', response.data.data.email);
+      const data = response.data;
+      console.log('Login response:', data);
+
+      if (data.status === 426) {
+        showToast('error', data.message);
+        return;
+      }
+
+      if (data.status === 200) {
+        await AsyncStorage.setItem('userEmail', data.data.email || '');
         await AsyncStorage.setItem('userPassword', password);
-        await AsyncStorage.setItem('us_id', response.data.data.id);
-        const notice = response.data.data.notice;
-        showSuccessToast();
-        if (notice) {
-          console.log('notice');
-          setNotice(response.data.data.notice);
-          setShowNotice(true);
-          
-        } else {
-          setTimeout(() => {
-            // navigation.navigate('Home');
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [{ name: 'Home' }],
-              })
-            );
-          }, 1500); // 2000 milliseconds = 2 seconds
+        await AsyncStorage.setItem('us_id', data.data.id || '');
+        await AsyncStorage.setItem('balance', data.data.balance || '');
+        showToast('success', 'Login Successful', data.message);
 
-        }
-
-        // Alert.alert('Login Successful', 'You are now logged in.');
-
+        setTimeout(() => {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            })
+          );
+        }, 1000);
+      } else if (data.status === 202 && data.show_otp) {
+        setShowOtpInput(true);
+        setCountdown(60);
+        setShowResend(false);
+        showToast('success', 'OTP Sent', data.message);
       } else {
-        showErrorToast();
+        showToast('error', data.message || 'Login failed');
       }
     } catch (error) {
-      showErrorToast();
-      // Alert.alert('Error', 'Something went wrong. Please try again later.');
+      console.log('Login error:', error);
+      const message = error.response?.data?.message || 'Something went wrong.';
+      showToast('error', 'Login Error', message);
     }
   };
 
+  const handleResendOTP = async () => {
+    try {
+      const response = await fetch('https://righten.in/api/users/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `mobile=${encodeURIComponent(Mobile)}`
+      });
+
+      const data = await response.json();
+      if (data.status === 200) {
+        setCountdown(60);
+        setShowResend(false);
+        showToast('success', 'OTP Resent', data.message);
+      } else {
+        showToast('error', data.message || 'Failed to resend OTP');
+      }
+    } catch (error) {
+      console.error(error);
+      showToast('error', 'Error', 'Could not resend OTP');
+    }
+  };
+
+  useEffect(() => {
+    let timer;
+    if (showOtpInput && countdown > 0) {
+      timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
+    } else if (countdown <= 0) {
+      setShowResend(true);
+    }
+    return () => clearInterval(timer);
+  }, [showOtpInput, countdown]);
 
   return (
-    <ImageBackground
-      source={image_background}
-      style={styles.backgroundImage}
-      resizeMode="cover"
-    >
-      <View
-        style={{
-          position: 'relative',
-          zIndex: 10, // Ensure the toast is on top
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-        }}
-      >
+    <ImageBackground source={image_background} style={styles.backgroundImage} resizeMode="cover">
+      <View style={styles.toastWrapper}>
         <Toast />
       </View>
-
       <View style={styles.container}>
-        {showNotice == true ?
-          <>
-            <View style={styles.inner_container}>
-              <View style={{paddingVertical:20,marginBottom:15,marginTop:15,borderRadius:25}}>
-              <Text style={{fontSize:24,fontWeight:'bold' ,color:'red'}}>Notice *</Text>
-                <Text>
-                 
-                  <Text style={{fontSize:20,fontWeight:'normal' ,color:'black'}}>{notice}</Text>
-                </Text>
-              </View>
+        <View style={styles.inner_container}>
+          <Text style={styles.title}>Retailer</Text>
 
-
-              <View style={{ justifyContent: 'center', alignItems: 'center', }}>
-
-
-                <TouchableOpacity onPress={() => {
-                  console.log('closed noticce');
-                  setNotice('');
-                  setShowNotice(false);
-                  navigation.dispatch(
-                    CommonActions.reset({
-                      index: 0,
-                      routes: [{ name: 'Home' }],
-                    })
-                  );
-                }}>
-                  <Text style={{
-                    borderWidth: 3, fontSize: 24, paddingHorizontal: 20, paddingVertical: 5, borderRadius: 15,
-                    borderColor: 'red', color: 'red', fontWeight: 'bold'
-                  }}>close</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </>
-
-          :
-          <View style={styles.inner_container}>
-            {/* <Button title="Show toast" onPress={showSuccessToast} /> */}
-
-            <Text style={styles.title}>Retailer</Text>
-
-            <View style={styles.passwordContainer}>
-              <SvgXml xml={mobile_svg} />
-
-
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Mobile No"
-                placeholderTextColor="#000000"
-                keyboardType="numeric"
-                value={Mobile}
-                onChangeText={setMobile}
-                maxLength={10}
-              />
-            </View>
-            <View style={[styles.passwordContainer, {
-              marginTop: 10
-            }]}>
-              <SvgXml xml={passwordsvg} />
-
-              <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholderTextColor="#000000"
-                placeholder="Password"
-                secureTextEntry={!isPasswordVisible}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity onPress={togglePasswordVisibility}>
-                <SvgXml
-                  xml={isPasswordVisible ? eyeoff
-                    : eye
-                  }
-                  size={30}
-                  color="#FFCB0A"
-                />
-              </TouchableOpacity>
-            </View>
-            {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-            <TouchableOpacity style={styles.login_buton} title="Login" onPress={handleLogin} >
-              <Text style={{
-                fontSize: 20, fontFamily: 'BAUHS93', fontWeight: 'bold', color: '#FFFFFF'
-              }}>Log In</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => {
-              navigation.navigate('Register')
-            }}>
-
-
-              <Text style={{
-                fontSize: 20,
-                marginTop: 20,
-                marginBottom: 20,
-                textAlign: 'center',
-                color: '#000',
-                // borderBottomWidth:1,
-              }}>Not have an account? Register</Text>
-            </TouchableOpacity>
-
-
+          {/* Mobile Field */}
+          <View style={styles.passwordContainer}>
+            <SvgXml xml={mobile_svg} />
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Mobile No"
+              placeholderTextColor="#000"
+              keyboardType="numeric"
+              maxLength={10}
+              value={Mobile}
+              onChangeText={setMobile}
+            />
           </View>
-        }
 
+          {/* Password Field */}
+          <View style={[styles.passwordContainer, { marginTop: 10 }]}>
+            <SvgXml xml={passwordsvg} />
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Password"
+              placeholderTextColor="#000"
+              secureTextEntry={!isPasswordVisible}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={togglePasswordVisibility}>
+              <SvgXml xml={isPasswordVisible ? eyeoff : eye} />
+            </TouchableOpacity>
+          </View>
 
+          {/* OTP Input */}
+          {showOtpInput && (
+            <View style={[styles.passwordContainer, { marginTop: 10 }]}>
+              <SvgXml xml={passwordsvg} />
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Enter OTP"
+                placeholderTextColor="#000"
+                keyboardType="numeric"
+                value={otp}
+                onChangeText={setOtp}
+                maxLength={6}
+              />
+            </View>
+          )}
+
+          {/* Resend OTP */}
+          {showOtpInput && (
+            <View style={{ alignItems: 'center', marginTop: 10 }}>
+              {showResend ? (
+                <TouchableOpacity onPress={handleResendOTP}>
+                  <Text style={{ color: '#007bff', fontWeight: 'bold' }}>Resend OTP</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={{ color: '#666' }}>Resend OTP in {countdown}s</Text>
+              )}
+            </View>
+          )}
+
+          {/* Login Button */}
+          <TouchableOpacity
+            onPress={handleLogin}
+            style={[
+              styles.login_buton,
+              showOtpInput && otp.length !== 6 ? { backgroundColor: '#999' } : {}
+            ]}
+            disabled={showOtpInput && otp.length !== 6}
+          >
+            <Text style={{
+              fontSize: 20,
+              fontWeight: 'bold',
+              color: '#fff',
+              opacity: showOtpInput && otp.length !== 6 ? 0.6 : 1
+            }}>
+              {showOtpInput ? 'Verify OTP' : 'Login'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Register */}
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={{
+              fontSize: 18,
+              marginTop: 20,
+              textAlign: 'center',
+              color: '#000',
+            }}>
+              Not have an account? Register
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ImageBackground>
   );
 };
-export default LoginScreen;
 
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     width: '100%',
-
   },
+  toastWrapper: {
+  position: 'absolute',
+  top: 40, // Adjust if needed
+  left: 0,
+  right: 0,
+  zIndex: 9999,
+},
+
   logo_image: {
     height: 100,
     width: 100,
@@ -253,20 +257,27 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backgroundImage: {
+    flex: 1,
     width: '100%',
     height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+  },
+  toastWrapper: {
+    position: 'absolute',
+    top: 50, // You can adjust this if needed
+    left: 0,
+    right: 0,
+    zIndex: 9999,
   },
   inner_container: {
-    backgroundColor: 'white',
-    paddingLeft: 20,
-    paddingRight: 20,
-    paddingBottom: 20,
+    backgroundColor: '#ffffff',
     margin: 20,
-    padding: 10,
     borderRadius: 25,
-    elevation: 30,
+    padding: 20,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   title: {
     fontSize: 40,
@@ -281,38 +292,79 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 25,
     borderColor: '#FFCB0A',
-    marginBottom: 5,
-    justifyContent: 'center',
-    paddingLeft: 10,
-    paddingRight: 10,
-
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    height: 45,
   },
   input: {
+    flex: 1,
     height: 40,
-    marginTop: 5,
-    marginBottom: 5,
     fontSize: 16,
+    color: '#000',
     paddingHorizontal: 10,
-    marginLeft: 10,
-    color: '#000000',
   },
   login_buton: {
     marginTop: 10,
     marginBottom: 10,
     backgroundColor: '#FFCB0A',
     width: '100%',
-    alignSelf: 'center',
     alignItems: 'center',
     borderRadius: 15,
-    padding: 10
+    padding: 12,
   },
   error: {
     color: 'red',
     marginBottom: 15,
     textAlign: 'center',
   },
-
-
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  successGif: {
+    width: 90,
+    height: 90,
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#333',
+    marginBottom: 8,
+  },
+  modalTransactionId: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 12,
+  },
+  closeButton: {
+    backgroundColor: '#007BFF',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    alignSelf: 'center',
+    width: '100%',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
 });
+
 
 

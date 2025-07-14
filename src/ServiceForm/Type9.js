@@ -1,57 +1,80 @@
-import { StyleSheet, Text, View, Modal, Image, TextInput, TouchableOpacity, BackHandler, Dimensions, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Modal,
+  TextInput,
+  TouchableOpacity,
+  BackHandler,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Image,
+} from 'react-native';
 import React, { useState } from 'react';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import qs from 'qs';
-const { width } = Dimensions.get('window');
 import { SvgXml } from 'react-native-svg';
-import { serviceSVG, nameSVG, MobileSVG } from '../../assets/ALLSVG';
+import { MobileSVG } from '../../assets/ALLSVG';
 import Toast from 'react-native-toast-message';
 
-const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_service_id, form_service_id, formSubmitUrl, navigation }) => {
-  const [formResponse, setformResponse] = useState([]);
-  const [name, setName] = useState('');
-  const [dob, setDob] = useState('');
-  const [mobileNo, setMobileNo] = useState('');
+const { width } = Dimensions.get('window');
+
+const Type9 = ({
+  service_data,
+  label,
+  cardtype,
+  form_service_code,
+  form_sub_service_id,
+  form_service_id,
+  formSubmitUrl,
+  app_icon,
+  navigation,
+}) => {
+  const [aadhaarNo, setAadhaarNo] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [modalTxnId, setModalTxnId] = useState('');
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        navigation.navigate('main');
+        navigation.navigate('Details', {
+          service_id: form_service_id,
+          service_code: form_service_code,
+          app_icon: app_icon,
+        });
         return true;
       };
+
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation])
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      };
+    }, [navigation, form_service_id, form_service_code, app_icon])
   );
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
+    if (!aadhaarNo || aadhaarNo.length !== 12) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Aadhaar',
+        text2: 'Please enter a valid 12-digit Aadhaar number.',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
       const user_id = await AsyncStorage.getItem('us_id');
-
-      if (!name || !mobileNo) {
-        Toast.show({
-          type: 'error',
-          text1: 'Missing Fields',
-          text2: 'Please fill all required fields.',
-        });
-        return;
-      }
-
-      if (mobileNo.length !== 10) {
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid Mobile Number',
-          text2: 'Mobile number must be exactly 10 digits.',
-        });
-        return;
-      }
-
       const response = await axios.post(
         formSubmitUrl,
         qs.stringify({
@@ -59,8 +82,7 @@ const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
           service_id: form_service_id,
           service_code: form_service_code,
           sub_service_id: form_sub_service_id,
-          name: name.toUpperCase(),
-          mobile: mobileNo,
+          aadhaar: aadhaarNo,
         }),
         {
           headers: {
@@ -69,87 +91,85 @@ const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
         }
       );
 
-      if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
-        setModalMessage(response.data.message);
-        setModalTxnId(response.data.data.txn_id);
-        setIsSuccessModalVisible(true);
+      if (response.data.status === true && response.data.pan && response.data.orderId) {
+        setIsError(false);
+        setModalMessage(`PAN: ${response.data.pan}`);
+        setModalTxnId(response.data.orderId);
 
         Toast.show({
           type: 'success',
           text1: 'Success',
-          text2: 'Form submitted successfully.',
+          text2: 'PAN Found Successfully!',
         });
-
-        setTimeout(() => {
-          setIsSuccessModalVisible(false);
-          navigation.navigate('ImagePicker', {
-            form_id: response.data.form_id,
-            txn_id: response.data.data.txn_id,
-            service_data: service_data
-          });
-        }, 2000);
       } else {
-        setModalMessage("Something went wrong. Please try again.");
+        setIsError(true);
+        setModalMessage(response.data.msg || 'Something went wrong. Please try again.');
         setModalTxnId('');
-        setIsSuccessModalVisible(true);
 
         Toast.show({
           type: 'error',
           text1: 'Failed',
-          text2: response.data.message || 'Submission failed.',
+          text2: response.data.msg || 'PAN not found.',
         });
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
-      setModalMessage("Error: Unable to submit form.");
+      console.error('PAN Find Error:', error);
+      setIsError(true);
+      setModalMessage('Error: Unable to process PAN Find.');
       setModalTxnId('');
-      setIsSuccessModalVisible(true);
 
       Toast.show({
         type: 'error',
         text1: 'Network Error',
-        text2: 'Failed to submit form. Try again later.',
+        text2: 'Please try again later.',
       });
     }
+
+    setIsSuccessModalVisible(true);
+    setIsSubmitting(false);
+  };
+
+  const handleCloseModal = () => {
+    setIsSuccessModalVisible(false);
+    setAadhaarNo('');
+    setModalMessage('');
+    setModalTxnId('');
+    setIsError(false);
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.card}>
           <Text style={styles.title}>{label}</Text>
 
-          <Text style={styles.label}>Name <Text style={{ color: 'red' }}>*</Text></Text>
-          <View style={styles.inputContainer}>
-            <SvgXml xml={nameSVG} style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={(text) => {
-                const onlyText = text.replace(/[^A-Za-z ]/g, '');
-                setName(onlyText.toUpperCase());
-              }}
-              placeholder="Enter Name"
-              placeholderTextColor="#666"
-            />
-          </View>
-
-          <Text style={styles.label}>Mobile No <Text style={{ color: 'red' }}>*</Text></Text>
+          <Text style={styles.label}>
+            Aadhaar Number <Text style={{ color: 'red' }}>*</Text>
+          </Text>
           <View style={styles.inputContainer}>
             <SvgXml xml={MobileSVG} style={styles.icon} />
             <TextInput
               style={styles.input}
-              value={mobileNo}
-              onChangeText={(text) => setMobileNo(text.replace(/[^0-9]/g, ''))}
-              placeholder="Enter Mobile Number"
+              value={aadhaarNo}
+              onChangeText={(text) => setAadhaarNo(text.replace(/[^0-9]/g, ''))}
+              placeholder="Enter Aadhaar Number"
               placeholderTextColor="#666"
-              maxLength={10}
               keyboardType="numeric"
+              maxLength={12}
             />
           </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-            <Text style={styles.buttonText}>Submit</Text>
+          <TouchableOpacity
+            style={[styles.button, isSubmitting && { opacity: 0.6 }]}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.buttonText}>
+              {isSubmitting ? 'Please wait...' : 'Submit'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -157,18 +177,21 @@ const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
       <Modal visible={isSuccessModalVisible} animationType="fade" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Image source={require('../../assets/success.gif')} style={styles.successGif} />
-              <Text style={styles.modalMessage}>{modalMessage}</Text>
-              {modalTxnId ? <Text style={styles.modalTransactionId}>Txn ID: {modalTxnId}</Text> : null}
-
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setIsSuccessModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>OK</Text>
-              </TouchableOpacity>
-            </View>
+            <Image
+              source={
+                isError
+                  ? require('../../assets/error.gif')
+                  : require('../../assets/success.gif')
+              }
+              style={styles.successGif}
+            />
+            <Text style={styles.modalMessage}>{modalMessage}</Text>
+            {modalTxnId ? (
+              <Text style={styles.modalTransactionId}>Txn ID: {modalTxnId}</Text>
+            ) : null}
+            <TouchableOpacity style={styles.closeButton} onPress={handleCloseModal}>
+              <Text style={styles.closeButtonText}>OK</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -178,7 +201,7 @@ const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
   );
 };
 
-export default Type3;
+export default Type9;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },

@@ -217,6 +217,7 @@ const Type4 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
                     <Text style={styles.buttonText}>Submit</Text>
                 </TouchableOpacity>
             </ScrollView>
+            <Toast />
         </KeyboardAvoidingView>
     );
 }
