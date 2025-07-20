@@ -112,9 +112,9 @@ const Type5 = ({
           response.data.form_id &&
           response.data.data?.txn_id
         ) {
-          setModalMessage(response.data.message);
-          setModalTxnId(response.data.data.txn_id);
-          setIsSuccessModalVisible(true);
+          // setModalMessage(response.data.message);
+          // setModalTxnId(response.data.data.txn_id);
+          // setIsSuccessModalVisible(true);
 
           Toast.show({
             type: 'success',
@@ -123,7 +123,7 @@ const Type5 = ({
           });
 
           setTimeout(() => {
-            setIsSuccessModalVisible(false);
+            //setIsSuccessModalVisible(false);
             navigation.navigate('ImagePicker', {
               form_id: response.data.form_id,
               txn_id: response.data.data.txn_id,

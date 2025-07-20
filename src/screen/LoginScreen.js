@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
-    borderRadius: 25,
+    borderRadius: 15,
     borderColor: '#FFCB0A',
     marginBottom: 10,
     paddingHorizontal: 10,

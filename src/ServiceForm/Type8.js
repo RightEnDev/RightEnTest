@@ -109,9 +109,9 @@ const Type8 = ({
       );
 
       if (response.data.status === 'success' && response.data.form_id) {
-        setModalMessage(response.data.message);
-        setModalTxnId(response.data.data?.txn_id || '');
-        setIsSuccessModalVisible(true);
+        // setModalMessage(response.data.message);
+        // setModalTxnId(response.data.data?.txn_id || '');
+        // setIsSuccessModalVisible(true);
 
         Toast.show({
           type: 'success',
@@ -120,7 +120,7 @@ const Type8 = ({
         });
 
         setTimeout(() => {
-          setIsSuccessModalVisible(false);
+          //setIsSuccessModalVisible(false);
           navigation.navigate('ImagePicker', {
             form_id: response.data.form_id,
             txn_id: response.data.data?.txn_id,
@@ -140,9 +140,9 @@ const Type8 = ({
           text2: response.data.message || 'Something went wrong!',
         });
 
-        setModalMessage(response.data.message || 'Submission failed');
-        setModalTxnId('');
-        setIsSuccessModalVisible(true);
+        // setModalMessage(response.data.message || 'Submission failed');
+        // setModalTxnId('');
+        // setIsSuccessModalVisible(true);
       }
     } catch (err) {
       Toast.show({

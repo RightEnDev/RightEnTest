@@ -1,38 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Button,
-  PermissionsAndroid,
-  StatusBar,
-  Modal,
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  Alert,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  FlatList, Dimensions,
-  BackHandler,
+  StyleSheet, Text, View, Image, TouchableOpacity,
+  ActivityIndicator, FlatList, Dimensions, BackHandler, PermissionsAndroid
 } from 'react-native';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import Toast from 'react-native-toast-message';
 import { useFocusEffect } from '@react-navigation/native';
-
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { SvgXml } from 'react-native-svg';
-import { ImageCompressor } from 'react-native-compressor';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import axios from 'axios';
+import ImageResizer from 'react-native-image-resizer';
 
 const screenWidth = Dimensions.get('window').width;
-import axios from 'axios';
-// console.log(screenWidth);
+
 const ImagePicker = ({ route, navigation }) => {
-  const { txn_id, form_id,service_data } = route.params;
-  // console.log(txn_id);
-  // console.log(txn_id);
+  const { txn_id, form_id, service_data } = route.params;
   const [loading, setLoading] = useState(false);
   const [photoUris, setPhotoUris] = useState([]);
+  console.log('service data',service_data);
+  console.log('form_id',form_id);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -40,9 +25,7 @@ const ImagePicker = ({ route, navigation }) => {
         navigation.navigate('main');
         return true;
       };
-
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
       return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation])
   );
@@ -50,16 +33,7 @@ const ImagePicker = ({ route, navigation }) => {
   const requestCameraPermission = async () => {
     try {
       const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-        {
-          title: 'Cool Photo App Camera Permission',
-          message:
-            'Cool Photo App needs access to your camera ' +
-            'so you can take awesome pictures.',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        }
+        PermissionsAndroid.PERMISSIONS.CAMERA
       );
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     } catch (err) {
@@ -68,361 +42,245 @@ const ImagePicker = ({ route, navigation }) => {
     }
   };
 
-  const handleChooseImage = async (option) => {
-    // const compressImageUnder2MB = async (uri) => {
-    //   console.log("compressImageUnder2MB called");
-    //   let quality = 1.0;
-    //   let compressedImageUri;
-    //   let fileSize;
+  const showToast = (type, message) => {
+    Toast.show({
+      type,
+      text1: type === 'success' ? '✅ Success' : '❌ Error',
+      text2: message,
+    });
+  };
 
-    //   do {
-    //     compressedImageUri = await ImageCompressor.compress(uri, {
-    //       compressionMethod: 'auto', // Use auto compression
-    //       quality: quality * 80, // quality should be between 0-100
-    //     });
+const handleChooseImage = async (option) => {
+  const picker = option === 'camera' ? launchCamera : launchImageLibrary;
 
-    //     // Get the file size of the compressed image
-    //     const stats = await RNFetchBlob.fs.stat(compressedImageUri);
-    //     fileSize = stats.size;
-
-    //     quality -= 0.1; // Reduce quality by 10% on each iteration if needed
-    //   } while (fileSize > 2 * 1024 * 1024 && quality > 0);
-
-    //   return compressedImageUri;
-    // };
-
-    if (option === 'camera') {
-      const hasPermission = await requestCameraPermission();
-      if (hasPermission) {
-        launchCamera({
-          mediaType: 'photo', 
-          maxWidth: 1920,
-          maxHeight: 1080,
-          quality: 1, includeBase64: true
-        }, async (response) => {
-          if (response.didCancel) {
-            Alert.alert('User cancelled photo picker');
-          } else if (response.errorCode) {
-            Alert.alert('ImagePicker Error: ', response.errorMessage);
-          } else {
-            const imageSize = response.assets[0].fileSize; // Get the original image size in bytes
-            // console.log(`Original Image Size: ${(imageSize / (1024 * 1024)).toFixed(2)} MB`); // Log original size in MB
-
-            if (imageSize > 2 * 1024 * 1024) { // 2 MB in bytes
-              try {
-                // const compressedImageUri = await compressImageUnder2MB(response.assets[0].uri);
-
-                // Image.getSize(compressedImageUri, (width, height) => {
-                //   console.log(`Compressed Image Size: Width = ${width}, Height = ${height}`);
-                // });
-
-                setPhotoUris((prevUris) => [...prevUris, response.assets[0].uri]);
-              } catch (error) {
-                Alert.alert('Compression Error', error.message);
-              }
-            } else {
-              setPhotoUris((prevUris) => [...prevUris, response.assets[0].uri]);
-            }
-          }
-        });
-      } else {
-        Alert.alert('Camera permission denied');
-      }
-    } else if (option === 'gallery') {
-      launchImageLibrary({ mediaType: 'photo', includeBase64: true }, async (response) => {
-        if (response.didCancel) {
-          Alert.alert('User cancelled photo picker');
-        } else if (response.errorCode) {
-          Alert.alert('ImagePicker Error: ', response.errorMessage);
-        } else {
-          const imageSize = response.assets[0].fileSize; // Get the original image size in bytes
-          // console.log(`Original Image Size: ${(imageSize / (1024 * 1024)).toFixed(2)} MB`); // Log original size in MB
-
-          if (imageSize > 2 * 1024 * 1024) { // 2 MB in bytes
-            try {
-              // const compressedImageUri = await compressImageUnder2MB(response.assets[0].uri);
-
-              // Image.getSize(compressedImageUri, (width, height) => {
-              //   console.log(`Compressed Image Size: Width = ${width}, Height = ${height}`);
-              // });
-
-              setPhotoUris((prevUris) => [...prevUris, response.assets[0].uri]);
-            } catch (error) {
-              Alert.alert('Compression Error', error.message);
-            }
-          } else {
-            setPhotoUris((prevUris) => [...prevUris, response.assets[0].uri]);
-          }
-        }
-      });
+  if (option === 'camera') {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      return showToast('error', 'Camera permission denied.');
     }
-  };
-  const showSuccessToast = () => {
-    Toast.show({
-      type: 'success',
-      text1: `successfull ✅  `,
-      text2: `Image upload successfully !`,
-    });
-  };
-  const showErrorToast = (message) => {
-    Toast.show({
-      type: 'error',
-      text1: 'Oops! 😔',
-      text2: `${message}`,
-    });
+  }
+
+  picker({ mediaType: 'photo', quality: 1, includeBase64: false }, async (response) => {
+    if (response.didCancel) return;
+    if (response.errorCode) return showToast('error', response.errorMessage);
+
+    const asset = response.assets?.[0];
+    if (!asset) return;
+
+    let finalUri = asset.uri;
+    let finalSize = asset.fileSize;
+
+    if (finalSize > 2 * 1024 * 1024) {
+      try {
+        const resized = await ImageResizer.createResizedImage(
+          asset.uri,
+          asset.width * 0.7, // resize to 70% of original width
+          asset.height * 0.7, // maintain aspect ratio
+          'JPEG',
+          75 // compress quality: 0-100
+        );
+        finalUri = resized.uri;
+        const stat = await fetch(resized.uri);
+        const blob = await stat.blob();
+        finalSize = blob.size;
+
+        if (finalSize > 2 * 1024 * 1024) {
+          return showToast('error', 'Even after compression, image exceeds 2MB.');
+        }
+      } catch (err) {
+        console.warn('Resize Error:', err);
+        return showToast('error', 'Failed to compress image.');
+      }
+    }
+
+    setPhotoUris((prev) => [...prev, finalUri]);
+  });
+};
+
+  const removeImage = (index) => {
+    const updated = [...photoUris];
+    updated.splice(index, 1);
+    setPhotoUris(updated);
   };
 
   const uploadPhotos = async () => {
-    setLoading(true); // Start loading indicator
+    if (photoUris.length === 0) return;
 
-    const attemptUpload = async () => { // Removed retry parameter
-      try {
-        const us_id = await AsyncStorage.getItem('us_id');
+    setLoading(true);
+    try {
+      const us_id = await AsyncStorage.getItem('us_id');
+      const formData = new FormData();
+      formData.append('user_id', us_id);
+      formData.append('form_id', form_id);
+      formData.append('txn_id', txn_id);
 
-        const formData = new FormData();
-        formData.append('user_id', us_id);
-        formData.append('form_id', form_id);
-        formData.append('txn_id', txn_id);
-
-        
-
-        for (let i = 0; i < photoUris.length; i++) {
-          const uri = photoUris[i];
-          if (uri) {
-            const fileExtension = uri.split('.').pop().toLowerCase();
-            if (fileExtension !== 'jpeg' && fileExtension !== 'jpg') {
-              showErrorToast('Unsupported File Type', 'Only JPG and JPEG images are supported.');
-              setLoading(false); // Stop loading indicator
-              return;
-            }
-
-            const mimeType = 'image/jpeg';
-            formData.append('files[]', {
-              uri: uri.startsWith('file://') ? uri : `file://${uri}`,
-              type: mimeType,
-              name: `photo_${i}.${fileExtension}`,
-            });
-          }
+      for (let i = 0; i < photoUris.length; i++) {
+        const uri = photoUris[i];
+        const ext = uri.split('.').pop().toLowerCase();
+        if (!['jpg', 'jpeg'].includes(ext)) {
+          setLoading(false);
+          return showToast('error', 'Only JPG and JPEG formats supported.');
         }
 
-        const response = await axios.post(service_data.fileUploadURl, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          timeout: 60000 * 2, // Increased timeout to 60 seconds
+        formData.append('files[]', {
+          uri: uri.startsWith('file://') ? uri : `file://${uri}`,
+          type: 'image/jpeg',
+          name: `photo_${i}.${ext}`,
         });
-
-        if (response.status === 200) {
-          // console.log('Photos uploaded successfully');
-          // console.log(response.data);
-          showSuccessToast();
-
-          // Navigate to 'Payment' screen after 1 second
-          setTimeout(() => {
-            setPhotoUris([]);
-            navigation.navigate('Paymennt', { "txn_id": txn_id , "user_id":us_id, "service_data":service_data});
-          }, 1000);
-
-        } else {
-          console.error('Failed to upload photos', response.status, response.statusText);
-          showErrorToast('Failed to upload photos. Please try again later.');
-        }
-      } catch (error) {
-        handleError(error);
-      } finally {
-        setLoading(false); // Stop loading indicator regardless of success or failure
       }
-    };
 
-    const handleError = (error) => {
-      if (error.response) {
-        console.error('Server Error:', error.response.status, error.response.data);
-        showErrorToast('Server error.');
-      } else if (error.request) {
-        console.error('No Response Received:', error.request);
-        showErrorToast('Network error.');
+      const response = await axios.post(service_data.fileUploadURl, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        //timeout: 60000,
+      });
+
+      if (response.status === 200) {
+        showToast('success', 'Images uploaded successfully!');
+        setTimeout(() => {
+          setPhotoUris([]);
+          navigation.navigate('PaymentMode', { txn_id, user_id: us_id,form_id, service_data });
+        }, 1000);
       } else {
-        console.error('Error uploading photos:', error.message);
-        showErrorToast('Upload Error', 'An unexpected error occurred.');
+        showToast('error', 'Upload failed.');
       }
-    };
-
-    await attemptUpload(); // Call attemptUpload without retry logic
+    } catch (err) {
+      showToast('error', 'Server/Network error.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-
-
-
-  const renderItem = ({ item }) => (
-    <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
+  const renderItem = ({ item, index }) => (
+    <View style={styles.imageContainer}>
+      <Image source={{ uri: item }} style={styles.image} resizeMode="cover" />
+      <TouchableOpacity
+        style={styles.removeButton}
+        onPress={() => {
+          const updatedUris = [...photoUris];
+          updatedUris.splice(index, 1);
+          setPhotoUris(updatedUris);
+        }}
+      >
+        <Text style={styles.removeText}>✕</Text>
+      </TouchableOpacity>
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.item}>Upload Documents<Text style={{ color: 'red' }}>*</Text></Text>
-      {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" /> // Show loading indicator
-      ) : null}
-      <Toast />
-      <View style={styles.buttonContainer}>
+      <Text style={styles.title}>📤 Upload Documents <Text style={{ color: 'red' }}>*</Text></Text>
 
-        {/* <TouchableOpacity
-          style={styles.button}
-          onPress={() => handleChooseImage('gallery')}
-        >
-          <View style={styles.buttonInner}>
-            <SvgXml
-              xml={`<svg viewBox="0 0 1024 1024" width="60" height="60" xmlns="http://www.w3.org/2000/svg" fill="#000000">
-                <path d="M874.666667 896H277.333333c-46.933333 0-85.333333-38.4-85.333333-85.333333V384c0-46.933333 38.4-85.333333 85.333333-85.333333h597.333334c46.933333 0 85.333333 38.4 85.333333 85.333333v426.666667c0 46.933333-38.4 85.333333-85.333333 85.333333z" fill="#E65100"></path>
-                <path d="M746.666667 768H149.333333c-46.933333 0-85.333333-38.4-85.333333-85.333333V256c0-46.933333 38.4-85.333333 85.333333-85.333333h597.333334c46.933333 0 85.333333 38.4 85.333333 85.333333v426.666667c0 46.933333-38.4 85.333333-85.333333 85.333333z" fill="#F57C00"></path>
-                <path d="M640 341.333333m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0Z" fill="#FFF9C4"></path>
-                <path d="M362.666667 381.866667L170.666667 661.333333h384z" fill="#942A09"></path>
-                <path d="M597.333333 501.333333L469.333333 661.333333h256z" fill="#BF360C"></path>
-              </svg>`}
-            />
-            <Text style={styles.buttonText}>Gallery</Text>
-          </View>
-        </TouchableOpacity> */}
+      {loading && <ActivityIndicator size="large" color="#009743" style={{ marginVertical: 10 }} />}
 
-        <TouchableOpacity
-          style={styles.cameraButton}
-          onPress={() => handleChooseImage('camera')}
-        >
-            <View style={styles.cameraContent}>
-              <View style={styles.cameraIconContainer}>
-                <SvgXml
-                  xml={`<svg width="30px" height="30px" viewBox="0 -2 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="#ffffff"><g id="SVGRepo_iconCarrier"> <title>camera</title> <g id="Icon-Set-Filled" transform="translate(-258.000000, -467.000000)" fill="#ffffff"> <path d="M286,471 L283,471 L282,469 C281.411,467.837 281.104,467 280,467 L268,467 C266.896,467 266.53,467.954 266,469 L265,471 L262,471 C259.791,471 258,472.791 258,475 L258,491 C258,493.209 259.791,495 262,495 L286,495 C288.209,495 290,493.209 290,491 L290,475 C290,472.791 288.209,471 286,471 Z M274,491 C269.582,491 266,487.418 266,483 C266,478.582 269.582,475 274,475 C278.418,475 282,478.582 282,483 C282,487.418 278.418,491 274,491 Z M274,477 C270.687,477 268,479.687 268,483 C268,486.313 270.687,489 274,489 C277.313,489 280,486.313 280,483 C280,479.687 277.313,477 274,477 L274,477 Z" id="camera"> </path> </g> </g></svg>`}
-                />
-              </View>
-              <Text style={styles.buttonText}>Take a Photo</Text>
-            </View>
+      <View style={styles.buttonRow}>
+        <TouchableOpacity onPress={() => handleChooseImage('gallery')} style={styles.iconButton}>
+          <Image source={require('../../assets/icon/galary.png')} style={styles.iconImage} />
+          <Text style={styles.buttonText}>Gallery</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => handleChooseImage('camera')} style={styles.iconButton}>
+          <Image source={require('../../assets/icon/camera.png')} style={styles.iconImage} />
+          <Text style={styles.buttonText}>Camera</Text>
         </TouchableOpacity>
       </View>
 
-      {/* <FlatList
+      {photoUris.length > 0 ? (
+      <FlatList
         data={photoUris}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
-        numColumns={3}
+        key={photoUris.length > 1 ? 'multi' : 'single'}
+        numColumns={2}
         contentContainerStyle={styles.scrollContainer}
-      /> */}
-      {photoUris.length > 0 ? (
-        <FlatList
-          data={photoUris}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={3}
-          contentContainerStyle={styles.scrollContainer}
-        />
+      />
       ) : (
-        <Text style={{ textAlign: "center", margin: 5 }}>No images selected</Text>
+        <Text style={styles.noImageText}>No images selected</Text>
       )}
+
       <TouchableOpacity
-        style={[styles.reuploadButton, photoUris.length === 0 && styles.disabledButton]}
+        style={[styles.uploadButton, photoUris.length === 0 && styles.disabledButton]}
         onPress={uploadPhotos}
         disabled={photoUris.length === 0}
       >
-        <Text style={styles.reuploadText}>Upload / Pay</Text>
+        <Text style={styles.uploadText}>📤 Upload & Pay</Text>
       </TouchableOpacity>
+        <Toast />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 8,
-  },
-  scrollContainer: {
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  item: {
-    margin: 24,
-    fontSize: 34,
-    fontWeight: 'bold',
+  container: { flex: 1, backgroundColor: '#ffffff', padding: 12 },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
     textAlign: 'center',
-    color: '#009743'
+    color: '#009743',
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    paddingBottom: 6,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    gap: 10,
+  },
+iconButton: {
+  flex: 1,
+  backgroundColor: '#f2f2f2',
+  paddingVertical: 10,
+  borderRadius: 8,
+  alignItems: 'center',
+  flexDirection: 'column',
+  gap: 5,
+},
+
+iconImage: {
+  width: 30,
+  height: 30,
+  resizeMode: 'contain',
+},
+  buttonText: { color: '#000', fontWeight: 'bold', fontSize: 16 },
+  scrollContainer: { alignItems: 'center', paddingBottom: 20 },
+  imageContainer: {
+    position: 'relative',
+    margin: 8,
+    width: screenWidth / 2.5, // 2 per row with margin
+    height: screenWidth / 4.5,  // keep height proportional
   },
   image: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#cccccc",
-    width: screenWidth / 3.5,
-    marginRight: '0%',
-    height: undefined,
-    aspectRatio: 1,
-    margin: 5,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    padding: 1,
-  },
-  button: {
-    marginHorizontal: 10,
-    alignItems: 'center',
-  },
-  buttonInner: {
-    backgroundColor: '#FFCB0A',
-    alignItems: 'center',
     width: '100%',
-    padding: 10,
-    borderRadius: 15,
+    height: '100%',
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#009743',
   },
-  // buttonText: {
-  //   color: 'black',
-  //   fontSize: 24,
-  //   fontWeight: 'bold',
-  //   width: 150,
-  //   textAlign: 'center',
-  // },
-
-  cameraButton: {
-    backgroundColor: "#007bff",  // Professional blue
-    borderRadius: 12,            // Smooth rounded corners
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",        // Icon & text same row
-    elevation: 5,                // Shadow effect
-    marginVertical: 10,
-    width: "100%",                  // Fixed width
+  removeButton: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#ff4444',
+    padding: 5,
+    borderRadius: 25,
+    zIndex: 1,
   },
-  cameraContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  cameraIconContainer: {
-    backgroundColor: "#0056b3",  // Darker blue shade
-    padding: 8,
-    borderRadius: 50,            // Circle background for icon
-    marginRight: 8,              // Space between icon & text
-  },
-  buttonText: {
-    fontSize: 16,
+  removeText: {
+    color: '#ffffff',
     fontWeight: 'bold',
-    marginTop: 5,
-    color: 'white',
+    fontSize: 12,
   },
-  disabledButton: {
-    backgroundColor: "#ccc", // Gray color to indicate disabled state
-    opacity: 0.6, // Reduce opacity
-  },
-  reuploadButton: {
+  noImageText: { textAlign: 'center', color: '#888', fontStyle: 'italic', marginTop: 10 },
+  uploadButton: {
     backgroundColor: '#FFCB0A',
     paddingVertical: 15,
-    paddingHorizontal: 50,
     borderRadius: 15,
     alignItems: 'center',
+    marginTop: 20,
   },
-  reuploadText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'black',
-  },
+  uploadText: { fontSize: 18, fontWeight: 'bold', color: 'black' },
+  disabledButton: { opacity: 0.5 },
 });
 
 export default ImagePicker;

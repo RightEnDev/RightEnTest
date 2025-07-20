@@ -90,15 +90,21 @@ const Type1 = ({ service_data, label, form_service_code, form_sub_service_id, fo
 
       const res = response.data;
       if (res.status === 'success' && res.form_id && res.data?.txn_id) {
-        setModalMessage(res.message);
-        setModalTxnId(res.data.data.txn_id);
-        setIsSuccessModalVisible(true);
+        // setModalMessage(res.message);
+        // setModalTxnId(res.data.txn_id);
+        // setIsSuccessModalVisible(true);
+        
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Form submitted successfully.',
+        });
 
         setTimeout(() => {
-          setIsSuccessModalVisible(false);
+          //setIsSuccessModalVisible(false);
           navigation.navigate('ImagePicker', {
             form_id: res.form_id,
-            txn_id: res.data.data.txn_id,
+            txn_id: res.data.txn_id,
             service_data,
           });
         }, 2000);

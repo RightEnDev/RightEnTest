@@ -2,7 +2,8 @@ import { StyleSheet, Text, View, Image, Dimensions } from 'react-native';
 
 import React, { useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const LOGO = require('../../assets/images/logo.png');
+//const LOGO = require('../../assets/images/logo.png');
+const LOGO = require('../../assets/images/bn_logo.png');
 const { width, height } = Dimensions.get('window');
 
 const Splash = ({ navigation }) => {

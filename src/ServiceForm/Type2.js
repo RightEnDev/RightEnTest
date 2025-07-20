@@ -129,9 +129,9 @@ const Type2 = ({
       );
 
       if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
-        setModalMessage(response.data.message);
-        setModalTxnId(response.data.data.txn_id);
-        setIsSuccessModalVisible(true);
+        // setModalMessage(response.data.message);
+        // setModalTxnId(response.data.data.txn_id);
+        // setIsSuccessModalVisible(true);
 
         Toast.show({
           type: 'success',
@@ -140,7 +140,7 @@ const Type2 = ({
         });
 
         setTimeout(() => {
-          setIsSuccessModalVisible(false);
+          //setIsSuccessModalVisible(false);
           navigation.navigate('ImagePicker', {
             form_id: response.data.form_id,
             txn_id: response.data.data.txn_id,
@@ -157,9 +157,9 @@ const Type2 = ({
         setBikeNO('');
         setMobileNo('');
       } else {
-        setModalMessage('Something went wrong. Please try again.');
-        setModalTxnId('');
-        setIsSuccessModalVisible(true);
+        // setModalMessage('Something went wrong. Please try again.');
+        // setModalTxnId('');
+        // setIsSuccessModalVisible(true);
 
         Toast.show({
           type: 'error',

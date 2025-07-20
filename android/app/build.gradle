@@ -67,8 +67,9 @@ dependencies {
 
     implementation 'in.payu:payu-checkout-pro:1.3.2'
 
-    implementation "androidx.activity:activity:1.7.2"
-    implementation "androidx.activity:activity-ktx:1.7.2"
+    implementation "androidx.activity:activity:1.8.0"
+    implementation "androidx.activity:activity-ktx:1.8.0"
+
 
     // Optional Firebase dependencies (uncomment if needed)
     // implementation platform('com.google.firebase:firebase-bom:32.2.0')

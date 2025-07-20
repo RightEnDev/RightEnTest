@@ -79,16 +79,16 @@ const Type6 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
         );
 
         if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
-          setModalMessage(response.data.message);
-          setModalTxnId(response.data.data.txn_id);
-          setIsSuccessModalVisible(true);
+          // setModalMessage(response.data.message);
+          // setModalTxnId(response.data.data.txn_id);
+          // setIsSuccessModalVisible(true);
           Toast.show({
             type: 'success',
             text1: '✅ Success',
             text2: `Txn ID: ${response.data.data.txn_id}`,
           });
           setTimeout(() => {
-            setIsSuccessModalVisible(false);
+            //setIsSuccessModalVisible(false);
             navigation.navigate('ImagePicker', {
               form_id: response.data.form_id,
               txn_id: response.data.data.txn_id,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
@@ -11,6 +11,8 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
+import { useFocusEffect } from '@react-navigation/native';
+import { BalanceContext } from '../screen/BalanceContext';
 
 import HomeScreen from '../screen/HomeScreen';
 import Profile from '../screen/Profile';
@@ -25,13 +27,16 @@ import PrivacyPolicy from '../screen/PrivacyPolicy';
 import RefundPolicy from '../screen/RefundPolicy';
 import TermsAndConditions from '../screen/TermsAndConditions';
 import DetailsScreen from '../screen/DetailsScreen';
+import PaymentMode from '../screen/PaymentMode';
+import WalletHistory from '../screen/WalletHistory';
+import PaymentHistory from '../screen/PaymentHistory';
+import ServiceHistory from '../screen/ServiceHistory';
 import Type1 from '../ServiceForm/Type1';
 
 import {
   profileSVG,
   historySVG,
   settingsSVG,
-  calliconSVG,
   reportSVG,
 } from '../../assets/ALLSVG';
 
@@ -39,18 +44,13 @@ const screenWidth = Dimensions.get('window').width;
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
-  const [balance, setBalance] = useState('0');
-  const helplineNumber = '+91 8250883776';
+  const { balance, fetchBalance } = useContext(BalanceContext);
 
-  useEffect(() => {
-    const fetchBalance = async () => {
-      const storedBalance = await AsyncStorage.getItem('balance');
-      if (storedBalance !== null) setBalance(storedBalance);
-    };
-    fetchBalance();
-  }, []);
-
-  const handleCallPress = () => Linking.openURL(`tel:${helplineNumber}`);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchBalance();
+    }, [])
+  );
 
   function MyTabBar({ state, descriptors, navigation }) {
     return (
@@ -115,7 +115,7 @@ function TabNavigator() {
                     <Image source={icon} style={styles.centerIcon} />
                   </View>
                 ) : (
-                  <SvgXml xml={icon} width={28} height={28} />
+                  <SvgXml xml={icon} width={30} height={30} />
                 )}
                 <Text style={styles.label}>{label_text_value}</Text>
               </View>
@@ -126,39 +126,51 @@ function TabNavigator() {
     );
   }
 
-  const defaultScreenOptions = {
-    headerStyle: { backgroundColor: '#CFF7FF' },
-    headerTintColor: '#fff',
-    headerTitle: () => (
-      <View style={{ alignItems: 'center', flex: 1 }}>
-        <TouchableOpacity onPress={handleCallPress} activeOpacity={0.7}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <SvgXml xml={calliconSVG} width={20} height={0} style={{ marginRight: 45, marginTop: 60 }} />
-            <Text style={styles.noticeText}>{helplineNumber}</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-    ),
-    headerLeft: () => (
-      <Image
-        source={require('../../assets/images/logo.png')}
-        style={{ width: 50, height: 50, marginLeft: 15 }}
-      />
-    ),
-    headerRight: () => (
-      <View style={{
+const defaultScreenOptions = {
+  headerStyle: {
+    backgroundColor: '#CFF7FF',
+  },
+  headerTintColor: '#fff',
+  headerTitleAlign: 'center', // ✅ This ensures title stays center
+  headerTitle: () => (
+    <Image
+      source={require('../../assets/images/bn_logo.png')}
+      style={{
+        width: 100,
+        height: 100,
+        resizeMode: 'contain',
+      }}
+    />
+  ),
+  headerLeft: () => (
+    <Image
+      source={require('../../assets/images/logo.png')}
+      style={{
+        width: 50,
+        height: 50,
+        marginLeft: 15,
+        resizeMode: 'contain',
+      }}
+    />
+  ),
+  headerRight: () => (
+    <View
+      style={{
         marginRight: 15,
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 8,
         alignItems: 'center',
-      }}>
-        <Text style={{ fontSize: 12, color: '#000' }}>Your Balance</Text>
-        <Text style={{ color: 'black', fontWeight: 'bold', fontSize: 16 }}>₹ {balance}</Text>
-      </View>
-    ),
+      }}
+    >
+      <Text style={{ fontSize: 12, color: '#000' }}>Your Balance</Text>
+      <Text style={{ color: 'black', fontWeight: 'bold', fontSize: 16 }}>
+        ₹ {balance}
+      </Text>
+    </View>
+  ),
+};
 
-  };
 
   return (
     <Tab.Navigator tabBar={props => <MyTabBar {...props} />} initialRouteName="main">
@@ -168,14 +180,18 @@ function TabNavigator() {
       <Tab.Screen name="Example2_1" component={History} options={defaultScreenOptions} />
       <Tab.Screen name="Example2_2" component={Settings} options={defaultScreenOptions} />
       <Tab.Screen name="Details" component={DetailsScreen} options={defaultScreenOptions} />
+      <Tab.Screen name="PaymentMode" component={PaymentMode} options={defaultScreenOptions} />
       <Tab.Screen name="ServiceForm" component={ServiceForm} options={defaultScreenOptions} />
       <Tab.Screen name="ShowDetails" component={ShowDetails} options={defaultScreenOptions} />
       <Tab.Screen name="Type1" component={Type1} options={defaultScreenOptions} />
-      <Tab.Screen name="Paymennt" component={PaymentPage} options={defaultScreenOptions} />
+      <Tab.Screen name="Payment" component={PaymentPage} options={defaultScreenOptions} />
       <Tab.Screen name="ImagePicker" component={ImagePicker} options={defaultScreenOptions} />
       <Tab.Screen name="TermsAndConditions" component={TermsAndConditions} options={defaultScreenOptions} />
       <Tab.Screen name="RefundPolicy" component={RefundPolicy} options={defaultScreenOptions} />
       <Tab.Screen name="PrivacyPolicy" component={PrivacyPolicy} options={defaultScreenOptions} />
+      <Tab.Screen name="WalletHistory" component={WalletHistory} options={defaultScreenOptions} />
+      <Tab.Screen name="PaymentHistory" component={PaymentHistory} options={defaultScreenOptions} />
+      <Tab.Screen name="ServiceHistory" component={ServiceHistory} options={defaultScreenOptions} />
     </Tab.Navigator>
   );
 }
@@ -188,7 +204,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: '#CFF7FF',
-    //height: 80, // ✅ Reduced footer height
     paddingBottom: 0,
   },
   tabButton: {
@@ -198,7 +213,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#000',
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
   },
   centerTabIconWrapper: {

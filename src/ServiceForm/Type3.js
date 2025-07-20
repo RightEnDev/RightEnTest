@@ -70,9 +70,9 @@ const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
       );
 
       if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
-        setModalMessage(response.data.message);
-        setModalTxnId(response.data.data.txn_id);
-        setIsSuccessModalVisible(true);
+        // setModalMessage(response.data.message);
+        // setModalTxnId(response.data.data.txn_id);
+        // setIsSuccessModalVisible(true);
 
         Toast.show({
           type: 'success',
@@ -81,7 +81,7 @@ const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
         });
 
         setTimeout(() => {
-          setIsSuccessModalVisible(false);
+          //setIsSuccessModalVisible(false);
           navigation.navigate('ImagePicker', {
             form_id: response.data.form_id,
             txn_id: response.data.data.txn_id,
@@ -89,9 +89,9 @@ const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
           });
         }, 2000);
       } else {
-        setModalMessage("Something went wrong. Please try again.");
-        setModalTxnId('');
-        setIsSuccessModalVisible(true);
+        // setModalMessage("Something went wrong. Please try again.");
+        // setModalTxnId('');
+        // setIsSuccessModalVisible(true);
 
         Toast.show({
           type: 'error',
@@ -101,9 +101,9 @@ const Type3 = ({ service_data, label, cardtype, form_service_code, form_sub_serv
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      setModalMessage("Error: Unable to submit form.");
-      setModalTxnId('');
-      setIsSuccessModalVisible(true);
+      // setModalMessage("Error: Unable to submit form.");
+      // setModalTxnId('');
+      // setIsSuccessModalVisible(true);
 
       Toast.show({
         type: 'error',

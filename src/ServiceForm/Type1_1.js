@@ -25,9 +25,6 @@ const Type1_1 = ({ service_data, label, form_service_code, form_sub_service_id, 
   const [showPicker, setShowPicker] = useState(false);
   const [fatherName, setFatherName] = useState('');
   const [mobileNo, setMobileNo] = useState('');
-  const [modalMessage, setModalMessage] = useState('');
-  const [modalTxnId, setModalTxnId] = useState('');
-  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
 
   const [checked, setChecked] = useState({
     form_csf_name: false,
@@ -76,71 +73,76 @@ const Type1_1 = ({ service_data, label, form_service_code, form_sub_service_id, 
     };
 
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-    const user_id = await AsyncStorage.getItem('us_id');
-    const anyChecked = Object.values(checked).some(Boolean);
-    const allThreeChecked = checked.form_csf_name && checked.form_csf_fname && checked.form_csf_dob;
+const handleSubmit = async () => {
+  if (!validateForm()) return;
 
-    if (!anyChecked) return Toast.show({ type: 'error', text1: 'Validation Error', text2: 'Select at least one Correction Type' });
-    if (allThreeChecked) return Toast.show({ type: 'error', text1: 'Validation Error', text2: 'Cannot select Name, Father Name and DOB together' });
+  const user_id = await AsyncStorage.getItem('us_id');
+  const anyChecked = Object.values(checked).some(Boolean);
+  const allThreeChecked = checked.form_csf_name && checked.form_csf_fname && checked.form_csf_dob;
 
+  if (!anyChecked) {
+    Toast.show({ type: 'error', text1: 'Validation Error', text2: 'Select at least one Correction Type' });
+    return;
+  }
 
-    try {
-      const response = await axios.post(formSubmitUrl,
-        qs.stringify({
-          user_id,
-          service_id: form_service_id,
-          service_code: form_service_code,
-          sub_service_id: form_sub_service_id,
-          name,
-          father_name: fatherName,
-          date_of_birth: dob,
-          mobile: mobileNo,
-          form_csf_name: checked.form_csf_name ? 'NAME' : '',
-          form_csf_fname: checked.form_csf_fname ? 'FATHER NAME' : '',
-          form_csf_dob: checked.form_csf_dob ? 'DATE OF BIRTH' : '',
-          form_csf_photo: checked.form_csf_photo ? 'PHOTO' : '',
-          form_csf_signature: checked.form_csf_signature ? 'SIGNATURE' : '',
-        }),
-        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-      );
+  if (allThreeChecked) {
+    Toast.show({ type: 'error', text1: 'Validation Error', text2: 'Cannot select Name, Father Name and DOB together' });
+    return;
+  }
 
-      if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
-        setModalMessage(response.data.message);
-        setModalTxnId(response.data.data.txn_id);
-        setIsSuccessModalVisible(true);
-        setTimeout(() => {
-          setIsSuccessModalVisible(false);
-          navigation.navigate('ImagePicker', {
-            form_id: response.data.form_id,
-            txn_id: response.data.data.txn_id,
-            service_data
-          });
-        }, 2000);
+  try {
+    const response = await axios.post(formSubmitUrl,
+      qs.stringify({
+        user_id,
+        service_id: form_service_id,
+        service_code: form_service_code,
+        sub_service_id: form_sub_service_id,
+        name,
+        father_name: fatherName,
+        date_of_birth: dob,
+        mobile: mobileNo,
+        form_csf_name: checked.form_csf_name ? 'NAME' : '',
+        form_csf_fname: checked.form_csf_fname ? 'FATHER NAME' : '',
+        form_csf_dob: checked.form_csf_dob ? 'DATE OF BIRTH' : '',
+        form_csf_photo: checked.form_csf_photo ? 'PHOTO' : '',
+        form_csf_signature: checked.form_csf_signature ? 'SIGNATURE' : '',
+      }),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
 
-        setName('');
-        setDob('');
-        setSelectedDate(new Date());
-        setFatherName('');
-        setMobileNo('');
-        setChecked({
-          form_csf_name: false,
-          form_csf_fname: false,
-          form_csf_dob: false,
-          form_csf_photo: false,
-          form_csf_signature: false,
+    if (response.data.status === 'success' && response.data.form_id && response.data.data?.txn_id) {
+      Toast.show({ type: 'success', text1: response.data.message, text2: `Txn ID: ${response.data.data.txn_id}` });
+
+      setTimeout(() => {
+        navigation.navigate('ImagePicker', {
+          form_id: response.data.form_id,
+          txn_id: response.data.data.txn_id,
+          service_data,
         });
+      }, 2000);
 
-      } else {
-        setModalMessage("Something went wrong. Please try again.");
-        setModalTxnId('');
-        setIsSuccessModalVisible(true);
-      }
-    } catch (err) {
-      Toast.show({ type: 'error', text1: 'Server Error', text2: 'Please try again later' });
+      // Reset form
+      setName('');
+      setDob('');
+      setSelectedDate(new Date());
+      setFatherName('');
+      setMobileNo('');
+      setChecked({
+        form_csf_name: false,
+        form_csf_fname: false,
+        form_csf_dob: false,
+        form_csf_photo: false,
+        form_csf_signature: false,
+      });
+
+    } else {
+      Toast.show({ type: 'error', text1: 'Submission Failed', text2: 'Something went wrong. Please try again.' });
     }
-  };
+  } catch (err) {
+    Toast.show({ type: 'error', text1: 'Server Error', text2: 'Please try again later' });
+  }
+};
+
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -272,18 +274,6 @@ const Type1_1 = ({ service_data, label, form_service_code, form_sub_service_id, 
         <Toast />
       </ScrollView>
 
-      <Modal visible={isSuccessModalVisible} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Image source={require('../../assets/success.gif')} style={styles.successGif} />
-            <Text style={styles.modalMessage}>{modalMessage}</Text>
-            {modalTxnId ? <Text style={styles.modalTransactionId}>Txn ID: {modalTxnId}</Text> : null}
-            <TouchableOpacity style={styles.closeButton} onPress={() => setIsSuccessModalVisible(false)}>
-              <Text style={styles.closeButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
       <Toast />
     </KeyboardAvoidingView>
   );

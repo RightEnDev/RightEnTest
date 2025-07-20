@@ -1,36 +1,29 @@
 import {
-  StyleSheet,
-  Text,
-  View,
-  BackHandler,
-  Alert,
-  StatusBar,
-  ActivityIndicator,
-  RefreshControl,
-  FlatList,
-  ScrollView,
-  Animated,
-  Dimensions,
-  Image,
-  TouchableOpacity
+  StyleSheet, Text, View, BackHandler, Alert, StatusBar, ActivityIndicator,
+  RefreshControl, FlatList, ScrollView, Animated, Dimensions, Image, TouchableOpacity, Linking
 } from 'react-native';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef,useContext } from 'react';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigationState } from '@react-navigation/native';
+import { BalanceContext } from '../screen/BalanceContext';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
   const [data, setData] = useState([]);
   const [notices, setNotices] = useState([]);
+  const { fetchBalance } = useContext(BalanceContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const scrollRef = useRef();
-  const scrollX = useRef(new Animated.Value(0)).current;
   const currentRoute = useNavigationState((state) => state.routes[state.index]?.name);
 
-  // Android Back Button Handling
+  const handleCall = () => {
+    Linking.openURL('tel:+918250883776');
+  };
+
   useEffect(() => {
     const backAction = () => {
       if (currentRoute === 'main') {
@@ -42,12 +35,11 @@ const HomeScreen = ({ navigation }) => {
       }
       return false;
     };
-
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
   }, [currentRoute]);
 
-  // Fetch Services
+
   const fetchData = async () => {
     try {
       const response = await axios.get('https://righten.in/api/users/services');
@@ -61,7 +53,6 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  // Fetch Notices
   const fetchNotices = async () => {
     try {
       const response = await axios.get('https://righten.in/api/retailer/notice?audience=retailer');
@@ -71,30 +62,27 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+const handleRefresh = async () => {
+  setRefreshing(true);
+  await Promise.all([fetchData(), fetchNotices(), fetchBalance()]);
+};
+
   useEffect(() => {
     fetchData();
     fetchNotices();
+    fetchBalance();
+    const interval = setInterval(fetchBalance, 10000);
+    return () => clearInterval(interval);
   }, []);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    await fetchNotices();
-  };
-
-  // Optional: Auto-scroll for notice slider
   useEffect(() => {
     let currentIndex = 0;
     const interval = setInterval(() => {
       if (scrollRef.current && notices.length > 1) {
         currentIndex = (currentIndex + 1) % notices.length;
-        scrollRef.current.scrollTo({
-          x: currentIndex * (width - 60),
-          animated: true,
-        });
+        scrollRef.current.scrollTo({ x: currentIndex * (width - 60), animated: true });
       }
     }, 5000);
-
     return () => clearInterval(interval);
   }, [notices]);
 
@@ -114,7 +102,6 @@ const HomeScreen = ({ navigation }) => {
   const renderItem = ({ item }) => {
     if (item.status !== "1" || !item.app_icon) return null;
     const isHighlighted = highlightServiceCodes.includes(item.service_code);
-
     return (
       <TouchableOpacity
         style={[styles.serviceBox, isHighlighted && styles.highlightedServiceBox]}
@@ -156,21 +143,12 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor="#06b4d6" />
-
       {/* 🔔 Notice Slider */}
       {notices.length > 0 && (
         <View style={styles.noticeContainer}>
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            ref={scrollRef}
-          >
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} ref={scrollRef}>
             {notices.map((notice, index) => (
-              <View
-                key={index}
-                style={[styles.noticeCard, { backgroundColor: getColor(notice.color) }]}
-              >
+              <View key={index} style={[styles.noticeCard, { backgroundColor: getColor(notice.color) }]}>
                 <Text style={styles.noticeTitle}>{notice.title}</Text>
                 <Text style={styles.noticeMessage}>{notice.message}</Text>
               </View>
@@ -186,18 +164,23 @@ const HomeScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id.toString()}
         numColumns={3}
         columnWrapperStyle={styles.serviceRow}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        contentContainerStyle={{ paddingBottom: 20 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        contentContainerStyle={{ paddingBottom: 60 }}
       />
+
+      {/* 📞 Call Button */}
+      <TouchableOpacity style={styles.callButton} onPress={handleCall}>
+        <Image
+          source={require('../../assets/icon/call.png')}
+          style={{ width: 50, height: 50 }}
+        />
+      </TouchableOpacity>
     </View>
   );
 };
 
 export default HomeScreen;
 
-// 🧱 Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -213,8 +196,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#666',
   },
-
-  // 🔔 Notices
   noticeContainer: {
     height: 120,
     marginBottom: 15,
@@ -241,8 +222,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#f8f9fa',
   },
-
-  // 🔘 Service Box
   serviceRow: {
     justifyContent: 'space-between',
     margin: 5,
@@ -289,5 +268,21 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#666',
+  },
+  callButton: {
+    position: 'absolute',
+    bottom: 5,
+    right: 20,
+    backgroundColor: 'rgba(40, 167, 70, 0.59)',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });
